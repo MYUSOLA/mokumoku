@@ -17,7 +17,6 @@ let schedules =
         fs.readFileSync(dataPath, "utf8")
     );
 
-
 // schedules.jsonが配列ではなかった場合
 if (!Array.isArray(schedules)) {
     schedules = [];
