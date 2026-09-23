@@ -1,0 +1,156 @@
+[
+  {
+    "id": 1789992629772,
+    "date": "2026-09-21",
+    "time": "21:00",
+    "person": [
+      "みゅそら"
+    ],
+    "title": "会議"
+  },
+  {
+    "id": 1790009386766,
+    "date": "2026-09-23",
+    "time": "20:00",
+    "timeType": "time",
+    "title": "ハロウィンテスプ",
+    "person": [
+      "みゅそら",
+      "now"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790010489548,
+    "date": "2026-09-30",
+    "time": "",
+    "timeType": "afternoon",
+    "title": "個人予定",
+    "person": [
+      "みゅそら"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790010714178,
+    "date": "2026-09-29",
+    "time": "",
+    "timeType": "allday",
+    "title": "個人予定",
+    "person": [
+      "みゅそら"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790010802597,
+    "date": "2026-09-19",
+    "time": "",
+    "timeType": "allday",
+    "title": "ラジオ体操",
+    "person": [
+      "みゅそら"
+    ],
+    "announcement": false,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790011934371,
+    "date": "2026-09-11",
+    "time": "",
+    "timeType": "allday",
+    "title": "個人予定",
+    "person": [
+      "みゅそら"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790011934372,
+    "date": "2026-09-12",
+    "time": "",
+    "timeType": "allday",
+    "title": "個人予定",
+    "person": [
+      "みゅそら"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790011934373,
+    "date": "2026-09-13",
+    "time": "",
+    "timeType": "allday",
+    "title": "個人予定",
+    "person": [
+      "みゅそら"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790021758447,
+    "date": "2026-09-01",
+    "time": "",
+    "timeType": "allday",
+    "title": "個人予定",
+    "person": [
+      "みゅそら"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790021758452,
+    "date": "2026-09-02",
+    "time": "",
+    "timeType": "allday",
+    "title": "個人予定",
+    "person": [
+      "みゅそら"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790021758456,
+    "date": "2026-09-04",
+    "time": "",
+    "timeType": "allday",
+    "title": "個人予定",
+    "person": [
+      "みゅそら"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790021758458,
+    "date": "2026-09-05",
+    "time": "",
+    "timeType": "allday",
+    "title": "個人予定",
+    "person": [
+      "みゅそら"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  },
+  {
+    "id": 1790031184978,
+    "date": "2026-09-09",
+    "time": "",
+    "timeType": "allday",
+    "title": "個人予定",
+    "person": [
+      "now"
+    ],
+    "announcement": true,
+    "announcementMinutes": 30
+  }
+]

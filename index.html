@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>もくもく予定表</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>📅 もくもく予定表</h1>
+    </header>
+
+    <main>
+
+    <div class="toolbar">
+        <button id="prevMonth">←</button>
+        <h2 id="currentMonth">2026年9月</h2>
+        <button id="nextMonth">→</button>
+    </div>
+
+  <div class="filters">
+
+    <label for="personFilter">表示する人：</label>
+
+    <select id="personFilter">
+        <option value="all">全員</option>
+    </select>
+
+    <button id="addPersonButton">
+        ＋ 人を追加
+    </button>
+
+    <button id="managePeopleButton">
+        👤 メンバー管理
+    </button>
+
+</div>
+
+    <div class="view-switch">
+    <button id="calendarViewButton">📅 カレンダー</button>
+    <button id="listViewButton">📋 一覧</button>
+    <button id="availabilityViewButton">👥 空き状況</button>
+</div>
+
+    <button id="addEventButton" class="add-event-button">
+        ＋ 予定を追加
+    </button>
+    <button id="addPersonalScheduleButton">個人予定を追加</button>
+
+    <div id="calendar" class="calendar">
+        <!-- JavaScriptでカレンダーを表示します -->
+    </div>
+
+    <div id="listView" class="list-view hidden">
+        <!-- JavaScriptで一覧を表示します -->
+    </div>
+
+<div id="availabilityView" style="display: none;">
+    <h2>👥 空き状況</h2>
+
+    <div id="availabilityPeopleFilter">
+        <strong>表示する人：</strong>
+    </div>
+
+    <div id="availabilityTable"></div>
+</div>
+
+   <!-- 予定詳細 -->
+<div id="eventModal" class="modal hidden">
+
+    <div class="modal-content">
+
+        <button id="closeModal" class="close-button">×</button>
+
+        <h2 id="modalTitle"></h2>
+
+        <p id="modalDate"></p>
+        <p id="modalTime"></p>
+
+        <h3>参加者</h3>
+        <ul id="modalPeople"></ul>
+
+        <p id="modalNotice"></p>
+
+        <div class="modal-actions">
+            <button id="editEventButton">✏️ 編集</button>
+            <button id="deleteEventButton">🗑️ 削除</button>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- 個人予定追加 -->
+<div id="personalScheduleModal" class="modal hidden">
+
+    <div class="modal-content">
+
+        <button id="closePersonalScheduleModal" class="close-button">×</button>
+
+        <h2>個人予定を追加</h2>
+
+        <label>
+            人
+            <select id="personalSchedulePerson"></select>
+        </label>
+
+        <label>
+            時間の種類
+            <select id="personalScheduleTimeType">
+                <option value="time">🕐 時刻を指定</option>
+                <option value="morning">🌅 朝</option>
+                <option value="afternoon">☀️ 昼</option>
+                <option value="evening">🌆 夕方</option>
+                <option value="night">🌙 夜</option>
+                <option value="allday">📅 一日中</option>
+            </select>
+        </label>
+
+        <label id="personalScheduleTimeLabel">
+            時間
+            <input type="time" id="personalScheduleTime">
+        </label>
+
+        <label>
+            日付
+        </label>
+
+       <div style="margin-bottom: 8px;">
+
+    <button
+        type="button"
+        id="selectAllPersonalScheduleDates"
+    >
+        全部選択
+    </button>
+
+    <button
+        type="button"
+        id="clearAllPersonalScheduleDates"
+    >
+        全部解除
+    </button>
+
+</div>
+
+<div
+    id="personalScheduleDates"
+    style="
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 5px;
+        margin-bottom: 15px;
+    "
+></div>
+
+        <button id="savePersonalScheduleButton" class="save-event-button">
+            個人予定をまとめて登録
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- 予定追加・編集 -->
+<div id="addEventModal" class="modal hidden">
+
+    <div class="modal-content">
+
+        <button id="closeAddEventModal" class="close-button">×</button>
+
+        <h2>予定を追加</h2>
+
+        <label>
+            日付
+            <input type="date" id="eventDate">
+        </label>
+
+        <label>
+            時間の種類
+            <select id="eventTimeType">
+                <option value="time">🕐 時刻を指定</option>
+                <option value="morning">🌅 朝</option>
+                <option value="afternoon">☀️ 昼</option>
+                <option value="evening">🌆 夕方</option>
+                <option value="night">🌙 夜</option>
+                <option value="allday">📅 一日中</option>
+            </select>
+        </label>
+
+        <label id="eventTimeLabel">
+            時間
+            <input type="time" id="eventTime">
+        </label>
+
+        <label>
+            予定名
+            <input
+                type="text"
+                id="eventTitle"
+                placeholder="例：マダミス『○○』"
+            >
+        </label>
+
+        <label>
+            参加者
+        </label>
+
+        <div class="people-checkboxes"></div>
+
+        <button id="saveEventButton" class="save-event-button">
+            予定を登録
+        </button>
+
+    </div>
+
+</div>
+
+    <!-- メンバー管理 -->
+    <div id="peopleModal" class="modal hidden">
+
+        <div class="modal-content">
+
+            <button id="closePeopleModal" class="close-button">×</button>
+
+            <h2>👤 メンバー管理</h2>
+
+            <div id="peopleManagementList">
+                <!-- JavaScriptでメンバー一覧を表示します -->
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
