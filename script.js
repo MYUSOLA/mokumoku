@@ -2,8 +2,7 @@
 // 基本設定
 // =========================
 
-const API_BASE_URL = "https://mokumoku-cu5yenka.b4a.run";
-
+const API_BASE_URL = "https://mokumoku.onrender.com";
 
 // =========================
 // DOM取得
