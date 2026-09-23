@@ -129,7 +129,7 @@ const commands = [
         .toJSON(),
 
 
-       // =========================
+    // =========================
     // 個人予定をまとめて追加
     // =========================
 
@@ -159,14 +159,16 @@ const commands = [
         )
 
         .toJSON(),
-   
-        // =========================
+
+
+    // =========================
     // 予定一覧
     // =========================
 
     new SlashCommandBuilder()
         .setName("list-schedule")
         .setDescription("予定を一覧表示します")
+
         .toJSON()
 ];
 
@@ -182,9 +184,6 @@ const rest =
 const CLIENT_ID =
     "1551324022711656598";
 
-const GUILD_ID =
-    "1452306250858627104";
-
 
 (async () => {
 
@@ -197,9 +196,8 @@ const GUILD_ID =
 
         await rest.put(
 
-            Routes.applicationGuildCommands(
-                CLIENT_ID,
-                GUILD_ID
+            Routes.applicationCommands(
+                CLIENT_ID
             ),
 
             {
