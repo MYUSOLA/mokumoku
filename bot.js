@@ -308,6 +308,19 @@ app.use(
 
 
 // =========================
+// カレンダー表示
+// =========================
+//
+// index.html / JS / CSS などを
+// Back4appから直接表示できるようにする
+//
+
+app.use(
+    express.static(__dirname)
+);
+
+
+// =========================
 // 予定一覧
 // =========================
 
@@ -684,7 +697,8 @@ app.delete(
 // Webサーバー起動
 // =========================
 
-const PORT = process.env.PORT || 3001;
+const PORT =
+    process.env.PORT || 3001;
 
 app.listen(
     PORT,
@@ -898,260 +912,262 @@ client.on(
             return;
         }
 
+
         // =========================
-// 個人予定をまとめて追加
-// =========================
+        // 個人予定をまとめて追加
+        // =========================
 
-if (
-    interaction.commandName ===
-    "add-personal-schedule"
-) {
+        if (
+            interaction.commandName ===
+            "add-personal-schedule"
+        ) {
 
-    const dateInput =
-        interaction.options.getString(
-            "date"
-        );
+            const dateInput =
+                interaction.options.getString(
+                    "date"
+                );
 
-    const timeInput =
-        interaction.options.getString(
-            "time"
-        );
+            const timeInput =
+                interaction.options.getString(
+                    "time"
+                );
 
-    const personInput =
-        interaction.options.getString(
-            "person"
-        );
+            const personInput =
+                interaction.options.getString(
+                    "person"
+                );
 
 
-    // =========================
-    // 日付を分割
-    // 空白・カンマ区切りに対応
-    // =========================
+            // =========================
+            // 日付を分割
+            // 空白・カンマ区切りに対応
+            // =========================
 
-    const dateInputs =
-        dateInput
-            .trim()
-            .split(/[,\s]+/)
-            .filter(
-                value =>
-                    value !== ""
+            const dateInputs =
+                dateInput
+                    .trim()
+                    .split(/[,\s]+/)
+                    .filter(
+                        value =>
+                            value !== ""
+                    );
+
+
+            if (
+                dateInputs.length === 0
+            ) {
+
+                await interaction.reply(
+                    "日付を1つ以上入力してね。"
+                );
+
+                return;
+            }
+
+
+            // =========================
+            // 日付を変換
+            // =========================
+
+            const dates =
+                dateInputs.map(
+                    input =>
+                        parseDateInput(input)
+                );
+
+
+            if (
+                dates.some(
+                    date =>
+                        !date
+                )
+            ) {
+
+                await interaction.reply(
+                    "日付は「0925」または「20260925」の形式で入力してね。"
+                );
+
+                return;
+            }
+
+
+            // =========================
+            // 同じ月か確認
+            // =========================
+
+            const firstMonth =
+                dates[0].substring(
+                    0,
+                    7
+                );
+
+
+            const sameMonth =
+                dates.every(
+                    date =>
+                        date.substring(
+                            0,
+                            7
+                        ) === firstMonth
+                );
+
+
+            if (!sameMonth) {
+
+                await interaction.reply(
+                    "個人予定は同じ月の日付をまとめて入力してね。"
+                );
+
+                return;
+            }
+
+
+            // =========================
+            // 時間を変換
+            // =========================
+
+            const parsedTime =
+                parseTimeInput(
+                    timeInput
+                );
+
+
+            if (!parsedTime) {
+
+                await interaction.reply(
+                    "時間は「14」「1430」「朝」「昼」「夕方」「夜」「一日中」の形式で入力してね。"
+                );
+
+                return;
+            }
+
+
+            // =========================
+            // 人
+            // =========================
+
+            const person =
+                personInput.trim();
+
+
+            if (
+                person === ""
+            ) {
+
+                await interaction.reply(
+                    "個人予定にする人の名前を入力してね。"
+                );
+
+                return;
+            }
+
+
+            // =========================
+            // 複数日分の予定を作成
+            // =========================
+
+            const newSchedules = [];
+
+
+            for (
+                const date of dates
+            ) {
+
+                let newId =
+                    Date.now();
+
+
+                while (
+                    schedules.some(
+                        schedule =>
+                            schedule.id === newId
+                    ) ||
+                    newSchedules.some(
+                        schedule =>
+                            schedule.id === newId
+                    )
+                ) {
+
+                    newId++;
+                }
+
+
+                newSchedules.push({
+
+                    id:
+                        newId,
+
+                    date:
+                        date,
+
+                    time:
+                        parsedTime.time,
+
+                    timeType:
+                        parsedTime.timeType,
+
+                    title:
+                        "個人予定",
+
+                    person:
+                        [person],
+
+                    announcement:
+                        true,
+
+                    announcementMinutes:
+                        30
+                });
+            }
+
+
+            // =========================
+            // 保存
+            // =========================
+
+            schedules.push(
+                ...newSchedules
             );
 
 
-    if (
-        dateInputs.length === 0
-    ) {
-
-        await interaction.reply(
-            "日付を1つ以上入力してね。"
-        );
-
-        return;
-    }
+            saveSchedules();
 
 
-    // =========================
-    // 日付を変換
-    // =========================
+            // =========================
+            // 結果を表示
+            // =========================
 
-    const dates =
-        dateInputs.map(
-            input =>
-                parseDateInput(input)
-        );
+            let message =
+                "📅 個人予定をまとめて登録したよ！\n\n";
 
 
-    if (
-        dates.some(
-            date =>
-                !date
-        )
-    ) {
+            newSchedules.forEach(
+                schedule => {
 
-        await interaction.reply(
-            "日付は「0925」または「20260925」の形式で入力してね。"
-        );
+                    message +=
+                        `📅 ${schedule.date} ` +
+                        `⏰ ${getDisplayTime(
+                            schedule.time,
+                            schedule.timeType
+                        )}\n`;
 
-        return;
-    }
+                }
+            );
 
-
-    // =========================
-    // 同じ月か確認
-    // =========================
-
-    const firstMonth =
-        dates[0].substring(
-            0,
-            7
-        );
-
-
-    const sameMonth =
-        dates.every(
-            date =>
-                date.substring(
-                    0,
-                    7
-                ) === firstMonth
-        );
-
-
-    if (!sameMonth) {
-
-        await interaction.reply(
-            "個人予定は同じ月の日付をまとめて入力してね。"
-        );
-
-        return;
-    }
-
-
-    // =========================
-    // 時間を変換
-    // =========================
-
-    const parsedTime =
-        parseTimeInput(
-            timeInput
-        );
-
-
-    if (!parsedTime) {
-
-        await interaction.reply(
-            "時間は「14」「1430」「朝」「昼」「夕方」「夜」「一日中」の形式で入力してね。"
-        );
-
-        return;
-    }
-
-
-    // =========================
-    // 人
-    // =========================
-
-    const person =
-        personInput.trim();
-
-
-    if (
-        person === ""
-    ) {
-
-        await interaction.reply(
-            "個人予定にする人の名前を入力してね。"
-        );
-
-        return;
-    }
-
-
-    // =========================
-    // 複数日分の予定を作成
-    // =========================
-
-    const newSchedules = [];
-
-
-    for (
-        const date of dates
-    ) {
-
-        let newId =
-            Date.now();
-
-
-        while (
-            schedules.some(
-                schedule =>
-                    schedule.id === newId
-            ) ||
-            newSchedules.some(
-                schedule =>
-                    schedule.id === newId
-            )
-        ) {
-
-            newId++;
-        }
-
-
-        newSchedules.push({
-
-            id:
-                newId,
-
-            date:
-                date,
-
-            time:
-                parsedTime.time,
-
-            timeType:
-                parsedTime.timeType,
-
-            title:
-                "個人予定",
-
-            person:
-                [person],
-
-            announcement:
-                true,
-
-            announcementMinutes:
-                30
-        });
-    }
-
-
-    // =========================
-    // 保存
-    // =========================
-
-    schedules.push(
-        ...newSchedules
-    );
-
-
-    saveSchedules();
-
-
-    // =========================
-    // 結果を表示
-    // =========================
-
-    let message =
-        "📅 個人予定をまとめて登録したよ！\n\n";
-
-
-    newSchedules.forEach(
-        schedule => {
 
             message +=
-                `📅 ${schedule.date} ` +
-                `⏰ ${getDisplayTime(
-                    schedule.time,
-                    schedule.timeType
-                )}\n`;
+                `👤 ${person}\n` +
+                `📝 個人予定`;
 
+
+            await interaction.reply(
+                message
+            );
+
+
+            return;
         }
-    );
 
-
-    message +=
-        `👤 ${person}\n` +
-        `📝 個人予定`;
-
-
-    await interaction.reply(
-        message
-    );
-
-
-    return;
-}
 
         // =========================
         // 予定一覧
