@@ -2,7 +2,8 @@
 // 基本設定
 // =========================
 
-const API_BASE_URL = "https://mokumoku.onrender.com";
+const API_BASE_URL = "http://localhost:3001";
+
 
 // =========================
 // DOM取得
@@ -1477,10 +1478,6 @@ personFilter.addEventListener(
 // 一覧表示
 // =========================
 
-// =========================
-// 一覧表示
-// =========================
-
 function showList() {
 
     listView.innerHTML = "";
@@ -1488,51 +1485,16 @@ function showList() {
     const selectedPerson =
         personFilter.value;
 
-
-    // 現在表示している年月
-    const targetYear =
-        year;
-
-    const targetMonth =
-        month + 1;
-
-
-    // 現在表示している年月の予定だけに絞り込む
     const filteredEvents =
         events
             .filter(
                 event => {
 
-                    // 日付から年月を取得
-                    const eventDate =
-                        new Date(
-                            event.date + "T00:00:00"
-                        );
-
-                    const eventYear =
-                        eventDate.getFullYear();
-
-                    const eventMonth =
-                        eventDate.getMonth() + 1;
-
-
-                    // 月が一致するか
-                    const monthMatches =
-                        eventYear === targetYear &&
-                        eventMonth === targetMonth;
-
-
-                    // 人物が一致するか
-                    const personMatches =
+                    return (
                         selectedPerson === "all" ||
                         event.people.includes(
                             selectedPerson
-                        );
-
-
-                    return (
-                        monthMatches &&
-                        personMatches
+                        )
                     );
                 }
             )
@@ -1547,10 +1509,8 @@ function showList() {
                     if (
                         dateCompare !== 0
                     ) {
-
                         return dateCompare;
                     }
-
 
                     return (
                         (a.time || "")
@@ -1561,35 +1521,6 @@ function showList() {
                 }
             );
 
-
-    // =========================
-    // 予定がない場合
-    // =========================
-
-    if (
-        filteredEvents.length === 0
-    ) {
-
-        const emptyMessage =
-            document.createElement("div");
-
-        emptyMessage.className =
-            "list-event";
-
-        emptyMessage.textContent =
-            `${targetYear}年${targetMonth}月の予定はありません。`;
-
-        listView.appendChild(
-            emptyMessage
-        );
-
-        return;
-    }
-
-
-    // =========================
-    // 予定を表示
-    // =========================
 
     filteredEvents.forEach(
         event => {
@@ -1669,6 +1600,7 @@ function showList() {
         }
     );
 }
+
 
 // =========================
 // カレンダー表示ボタン
