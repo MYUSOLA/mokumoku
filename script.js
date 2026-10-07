@@ -1480,6 +1480,9 @@ personFilter.addEventListener(
 
 function showList() {
 
+    currentMonth.textContent =
+        `${year}年${month + 1}月`;
+
     listView.innerHTML = "";
 
     const selectedPerson =
@@ -1843,6 +1846,9 @@ function renderAvailabilityPeopleFilter() {
 // =========================
 
 function renderAvailability() {
+
+    currentMonth.textContent =
+        `${year}年${month + 1}月`;
 
     renderAvailabilityPeopleFilter();
 
