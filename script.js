@@ -139,7 +139,7 @@ const personalScheduleDates =
 const savePersonalScheduleButton =
     document.getElementById("savePersonalScheduleButton");
 
-    const selectAllPersonalScheduleDates =
+const selectAllPersonalScheduleDates =
     document.getElementById(
         "selectAllPersonalScheduleDates"
     );
@@ -149,7 +149,12 @@ const clearAllPersonalScheduleDates =
         "clearAllPersonalScheduleDates"
     );
 
-    selectAllPersonalScheduleDates.addEventListener(
+
+// =========================
+// 個人予定の日付選択
+// =========================
+
+selectAllPersonalScheduleDates.addEventListener(
     "click",
     () => {
 
@@ -182,6 +187,7 @@ clearAllPersonalScheduleDates.addEventListener(
         );
     }
 );
+
 
 // =========================
 // 人物データ
@@ -553,6 +559,7 @@ function syncPeopleFromServer(serverSchedules) {
 
     updatePersonFilter();
     updatePeopleCheckboxes();
+    updatePersonalSchedulePeople();
 }
 
 
@@ -1484,19 +1491,41 @@ function showList() {
     const selectedPerson =
         personFilter.value;
 
+
+    // =========================
+    // 現在表示している月の予定だけ取得
+    // =========================
+
     const filteredEvents =
         events
             .filter(
                 event => {
 
-                    return (
+                    const eventDate =
+                        new Date(event.date);
+
+                    const monthMatches =
+                        eventDate.getFullYear() === year &&
+                        eventDate.getMonth() === month;
+
+                    const personMatches =
                         selectedPerson === "all" ||
                         event.people.includes(
                             selectedPerson
-                        )
+                        );
+
+                    return (
+                        monthMatches &&
+                        personMatches
                     );
                 }
             )
+
+
+            // =========================
+            // 日付・時間順に並べる
+            // =========================
+
             .sort(
                 (a, b) => {
 
@@ -1508,6 +1537,7 @@ function showList() {
                     if (
                         dateCompare !== 0
                     ) {
+
                         return dateCompare;
                     }
 
@@ -1521,6 +1551,10 @@ function showList() {
             );
 
 
+    // =========================
+    // 予定を一覧表示
+    // =========================
+
     filteredEvents.forEach(
         event => {
 
@@ -1530,6 +1564,10 @@ function showList() {
             eventElement.className =
                 "list-event";
 
+
+            // =========================
+            // 日付・時間
+            // =========================
 
             const dateElement =
                 document.createElement("div");
@@ -1541,6 +1579,10 @@ function showList() {
                 `📅 ${event.date} ${getDisplayTime(event)}`;
 
 
+            // =========================
+            // 予定名
+            // =========================
+
             const titleElement =
                 document.createElement("div");
 
@@ -1550,6 +1592,10 @@ function showList() {
             titleElement.textContent =
                 event.title;
 
+
+            // =========================
+            // 参加者
+            // =========================
 
             const peopleElement =
                 document.createElement("div");
@@ -1569,6 +1615,10 @@ function showList() {
                     .join("、");
 
 
+            // =========================
+            // 要素を追加
+            // =========================
+
             eventElement.appendChild(
                 dateElement
             );
@@ -1581,6 +1631,10 @@ function showList() {
                 peopleElement
             );
 
+
+            // =========================
+            // クリックで詳細表示
+            // =========================
 
             eventElement.addEventListener(
                 "click",
