@@ -1494,19 +1494,32 @@ function showList() {
     const selectedPerson =
         personFilter.value;
 
-    const filteredEvents =
-        events
-            .filter(
-                event => {
+    const targetYearMonth =
+    `${year}-${String(month + 1).padStart(2, "0")}`;
 
-                    return (
-                        selectedPerson === "all" ||
-                        event.people.includes(
-                            selectedPerson
-                        )
+const filteredEvents =
+    events
+        .filter(
+            event => {
+
+                const monthMatches =
+                    typeof event.date === "string" &&
+                    event.date.startsWith(
+                        targetYearMonth
                     );
-                }
-            )
+
+                const personMatches =
+                    selectedPerson === "all" ||
+                    event.people.includes(
+                        selectedPerson
+                    );
+
+                return (
+                    monthMatches &&
+                    personMatches
+                );
+            }
+        )
             .sort(
                 (a, b) => {
 
