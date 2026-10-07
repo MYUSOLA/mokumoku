@@ -1486,40 +1486,68 @@ personFilter.addEventListener(
 
 function showList() {
 
+    // 上の月表示
     currentMonth.textContent =
         `${year}年${month + 1}月`;
 
+
     listView.innerHTML = "";
+
 
     const selectedPerson =
         personFilter.value;
 
-    const targetYearMonth =
-    `${year}-${String(month + 1).padStart(2, "0")}`;
 
-const filteredEvents =
-    events
-        .filter(
-            event => {
+    // 今表示している年月
+    const targetYear =
+        String(year);
 
-                const monthMatches =
-                    typeof event.date === "string" &&
-                    event.date.startsWith(
-                        targetYearMonth
+    const targetMonth =
+        String(month + 1).padStart(2, "0");
+
+
+    const filteredEvents =
+        events
+            .filter(
+                event => {
+
+                    // 日付が正しい形式か確認
+                    if (
+                        typeof event.date !== "string"
+                    ) {
+                        return false;
+                    }
+
+
+                    // YYYY-MM-DD の
+                    // YYYY と MM を取り出す
+                    const eventYear =
+                        event.date.substring(0, 4);
+
+                    const eventMonth =
+                        event.date.substring(5, 7);
+
+
+                    // 月が一致しているか
+                    const monthMatches =
+                        eventYear === targetYear &&
+                        eventMonth === targetMonth;
+
+
+                    // 人物が一致しているか
+                    const personMatches =
+                        selectedPerson === "all" ||
+                        event.people.includes(
+                            selectedPerson
+                        );
+
+
+                    return (
+                        monthMatches &&
+                        personMatches
                     );
-
-                const personMatches =
-                    selectedPerson === "all" ||
-                    event.people.includes(
-                        selectedPerson
-                    );
-
-                return (
-                    monthMatches &&
-                    personMatches
-                );
-            }
-        )
+                }
+            )
             .sort(
                 (a, b) => {
 
