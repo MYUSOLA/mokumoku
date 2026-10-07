@@ -1456,6 +1456,12 @@ nextMonthButton.addEventListener(
             year++;
         }
 
+        console.log(
+            "次の月を押した:",
+            year,
+            month + 1
+        );
+
         refreshCurrentView();
     }
 );
