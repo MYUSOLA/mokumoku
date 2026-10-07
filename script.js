@@ -1482,44 +1482,19 @@ function showList() {
 
     listView.innerHTML = "";
 
-    // 上の月表示を更新
-    currentMonth.textContent =
-        `${year}年${month + 1}月`;
-
-
     const selectedPerson =
         personFilter.value;
-
-
-    // 現在表示中の年月
-    const targetYearMonth =
-        `${year}-${String(month + 1).padStart(2, "0")}`;
-
 
     const filteredEvents =
         events
             .filter(
                 event => {
 
-                    // 現在表示中の月か
-                    const monthMatches =
-                        typeof event.date === "string" &&
-                        event.date.startsWith(
-                            targetYearMonth
-                        );
-
-
-                    // 人物フィルター
-                    const personMatches =
+                    return (
                         selectedPerson === "all" ||
                         event.people.includes(
                             selectedPerson
-                        );
-
-
-                    return (
-                        monthMatches &&
-                        personMatches
+                        )
                     );
                 }
             )
@@ -1868,10 +1843,6 @@ function renderAvailabilityPeopleFilter() {
 // =========================
 
 function renderAvailability() {
-
-    // 上の月表示を更新
-    currentMonth.textContent =
-        `${year}年${month + 1}月`;
 
     renderAvailabilityPeopleFilter();
 
