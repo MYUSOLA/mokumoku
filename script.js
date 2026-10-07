@@ -1,8 +1,10 @@
+```javascript
 // =========================
 // 基本設定
 // =========================
 
 const API_BASE_URL = "https://mokumoku.onrender.com";
+
 
 // =========================
 // DOM取得
@@ -171,6 +173,7 @@ selectAllPersonalScheduleDates.addEventListener(
     }
 );
 
+
 clearAllPersonalScheduleDates.addEventListener(
     "click",
     () => {
@@ -222,6 +225,29 @@ const today = new Date();
 
 let year = today.getFullYear();
 let month = today.getMonth();
+
+
+// =========================
+// 現在の年月を文字列にする
+// =========================
+
+function getCurrentMonthString() {
+
+    return (
+        `${year}-${String(month + 1).padStart(2, "0")}`
+    );
+}
+
+
+// =========================
+// 月表示を更新
+// =========================
+
+function updateMonthDisplay() {
+
+    currentMonth.textContent =
+        `${year}年${month + 1}月`;
+}
 
 
 // =========================
@@ -311,6 +337,10 @@ function getDisplayTime(event) {
 // =========================
 
 function refreshCurrentView() {
+
+    // 月表示は必ず最初に更新
+    updateMonthDisplay();
+
 
     if (
         availabilityView.style.display !==
@@ -941,7 +971,6 @@ savePersonalScheduleButton.addEventListener(
             );
 
 
-        // 人のチェック
         if (!personId) {
 
             alert(
@@ -952,7 +981,6 @@ savePersonalScheduleButton.addEventListener(
         }
 
 
-        // 日付のチェック
         if (
             checkedDates.length === 0
         ) {
@@ -965,7 +993,6 @@ savePersonalScheduleButton.addEventListener(
         }
 
 
-        // 時刻指定の場合
         if (
             timeType === "time" &&
             !time
@@ -1360,7 +1387,6 @@ function showCalendar() {
                     "event personal-schedule-event";
 
 
-                // 人をまとめる
                 const personNames = [];
 
                 group.forEach(
@@ -1394,8 +1420,6 @@ function showCalendar() {
                     `${getDisplayTime(group[0])} 個人予定 ${personNames.join("・")}`;
 
 
-                // クリックしたときは
-                // その個人予定の一覧を開く
                 eventElement.addEventListener(
                     "click",
                     () => {
@@ -1420,8 +1444,7 @@ function showCalendar() {
     }
 
 
-    currentMonth.textContent =
-        `${year}年${month + 1}月`;
+    updateMonthDisplay();
 }
 
 
@@ -1493,7 +1516,15 @@ function showList() {
 
 
     // =========================
-    // 現在表示している月の予定だけ取得
+    // 現在表示中の月
+    // =========================
+
+    const currentMonthString =
+        getCurrentMonthString();
+
+
+    // =========================
+    // 現在表示中の月だけに絞る
     // =========================
 
     const filteredEvents =
@@ -1501,18 +1532,22 @@ function showList() {
             .filter(
                 event => {
 
-                    const eventDate =
-                        new Date(event.date);
-
+                    // 予定の日付が
+                    // 現在表示中の年月で始まるか
                     const monthMatches =
-                        eventDate.getFullYear() === year &&
-                        eventDate.getMonth() === month;
+                        typeof event.date === "string" &&
+                        event.date.startsWith(
+                            currentMonthString + "-"
+                        );
 
+
+                    // 人物フィルター
                     const personMatches =
                         selectedPerson === "all" ||
                         event.people.includes(
                             selectedPerson
                         );
+
 
                     return (
                         monthMatches &&
@@ -1523,7 +1558,7 @@ function showList() {
 
 
             // =========================
-            // 日付・時間順に並べる
+            // 日付・時間順
             // =========================
 
             .sort(
@@ -1652,6 +1687,10 @@ function showList() {
             );
         }
     );
+
+
+    // 月表示も必ず更新
+    updateMonthDisplay();
 }
 
 
@@ -1723,7 +1762,6 @@ function getAvailabilityTimeType(event) {
 
 
     // 朝
-    // 朝は空き状況に表示しない
     if (
         event.timeType === "morning"
     ) {
@@ -1774,7 +1812,7 @@ function getAvailabilityTimeType(event) {
 
 
         // 00:00〜10:59
-        // 朝扱いなので表示しない
+        // 朝扱い
         if (hour < 11) {
             return [];
         }
@@ -1964,6 +2002,10 @@ function renderAvailability() {
     );
 
 
+    // =========================
+    // 現在の月の日数
+    // =========================
+
     const daysInMonth =
         new Date(
             year,
@@ -2078,6 +2120,10 @@ function renderAvailability() {
     availabilityTable.appendChild(
         table
     );
+
+
+    // 月表示も必ず更新
+    updateMonthDisplay();
 }
 
 
@@ -2323,7 +2369,6 @@ saveEventButton.addEventListener(
             eventTimeType.value;
 
 
-        // 入力チェック
         if (
             !date ||
             !title ||
@@ -2690,4 +2735,7 @@ updatePersonFilter();
 updatePeopleCheckboxes();
 updatePersonalSchedulePeople();
 
+updateMonthDisplay();
+
 loadEventsFromServer();
+```
