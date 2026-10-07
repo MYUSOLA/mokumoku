@@ -1,21 +1,28 @@
-```javascript
-// =========================
+// ============================================================
+// もくもく予定表
+// JavaScript 全体
+// ============================================================
+
+
+// ============================================================
 // 基本設定
-// =========================
+// ============================================================
 
 const API_BASE_URL = "https://mokumoku.onrender.com";
 
 
-// =========================
+// ============================================================
 // DOM取得
-// =========================
+// ============================================================
 
+// --- 予定追加 ---
 const addEventButton =
     document.getElementById("addEventButton");
 
 const addPersonalScheduleButton =
     document.getElementById("addPersonalScheduleButton");
 
+// --- 空き状況 ---
 const availabilityViewButton =
     document.getElementById("availabilityViewButton");
 
@@ -29,8 +36,9 @@ const availabilityPeopleFilter =
     document.getElementById("availabilityPeopleFilter");
 
 const peopleCheckboxes =
-    document.querySelector(".people-checkboxes");
+    document.getElementById("peopleCheckboxes");
 
+// --- 人物 ---
 const personFilter =
     document.getElementById("personFilter");
 
@@ -49,6 +57,7 @@ const closePeopleModal =
 const peopleManagementList =
     document.getElementById("peopleManagementList");
 
+// --- 予定入力 ---
 const eventTimeType =
     document.getElementById("eventTimeType");
 
@@ -61,6 +70,7 @@ const addEventModal =
 const closeAddEventModal =
     document.getElementById("closeAddEventModal");
 
+// --- カレンダー ---
 const calendar =
     document.getElementById("calendar");
 
@@ -68,10 +78,10 @@ const currentMonth =
     document.getElementById("currentMonth");
 
 const prevMonthButton =
-    document.getElementById("prevMonth");
+    document.getElementById("prevMonthButton");
 
 const nextMonthButton =
-    document.getElementById("nextMonth");
+    document.getElementById("nextMonthButton");
 
 const calendarViewButton =
     document.getElementById("calendarViewButton");
@@ -82,6 +92,7 @@ const listViewButton =
 const listView =
     document.getElementById("listView");
 
+// --- 予定詳細 ---
 const eventModal =
     document.getElementById("eventModal");
 
@@ -112,11 +123,7 @@ const editEventButton =
 const deleteEventButton =
     document.getElementById("deleteEventButton");
 
-
-// =========================
-// 個人予定用DOM
-// =========================
-
+// --- 個人予定 ---
 const personalScheduleModal =
     document.getElementById("personalScheduleModal");
 
@@ -142,234 +149,343 @@ const savePersonalScheduleButton =
     document.getElementById("savePersonalScheduleButton");
 
 const selectAllPersonalScheduleDates =
-    document.getElementById(
-        "selectAllPersonalScheduleDates"
-    );
+    document.getElementById("selectAllPersonalScheduleDates");
 
 const clearAllPersonalScheduleDates =
-    document.getElementById(
-        "clearAllPersonalScheduleDates"
-    );
+    document.getElementById("clearAllPersonalScheduleDates");
 
 
-// =========================
-// 個人予定の日付選択
-// =========================
-
-selectAllPersonalScheduleDates.addEventListener(
-    "click",
-    () => {
-
-        const checkboxes =
-            document.querySelectorAll(
-                ".personal-schedule-date-checkbox"
-            );
-
-        checkboxes.forEach(
-            checkbox => {
-                checkbox.checked = true;
-            }
-        );
-    }
-);
-
-
-clearAllPersonalScheduleDates.addEventListener(
-    "click",
-    () => {
-
-        const checkboxes =
-            document.querySelectorAll(
-                ".personal-schedule-date-checkbox"
-            );
-
-        checkboxes.forEach(
-            checkbox => {
-                checkbox.checked = false;
-            }
-        );
-    }
-);
-
-
-// =========================
+// ============================================================
 // 人物データ
-// =========================
+// ============================================================
 
-let people = JSON.parse(
-    localStorage.getItem("mySchedulePeople")
-) || [
-    { id: "alice", name: "Aさん" },
-    { id: "bob", name: "Bさん" },
-    { id: "charlie", name: "Cさん" },
-    { id: "david", name: "Dさん" },
-    { id: "eve", name: "Eさん" }
+const PEOPLE_STORAGE_KEY = "mySchedulePeople";
+
+const DEFAULT_PEOPLE = [
+    {
+        id: "person1",
+        name: "A"
+    },
+    {
+        id: "person2",
+        name: "B"
+    },
+    {
+        id: "person3",
+        name: "C"
+    },
+    {
+        id: "person4",
+        name: "D"
+    },
+    {
+        id: "person5",
+        name: "E"
+    }
 ];
 
 
-// =========================
-// 予定データ
-// =========================
-
-let events = [];
-
-let selectedEvent = null;
-let isEditing = false;
-
-
-// =========================
-// 現在の年月
-// =========================
-
-const today = new Date();
-
-let year = today.getFullYear();
-let month = today.getMonth();
-
-
-// =========================
-// 現在の年月を文字列にする
-// =========================
-
-function getCurrentMonthString() {
-
-    return (
-        `${year}-${String(month + 1).padStart(2, "0")}`
+function savePeople(people) {
+    localStorage.setItem(
+        PEOPLE_STORAGE_KEY,
+        JSON.stringify(people)
     );
 }
 
 
-// =========================
-// 月表示を更新
-// =========================
+function getPeople() {
+    const saved =
+        localStorage.getItem(PEOPLE_STORAGE_KEY);
+
+    if (!saved) {
+        savePeople(DEFAULT_PEOPLE);
+        return [...DEFAULT_PEOPLE];
+    }
+
+    try {
+        const people = JSON.parse(saved);
+
+        if (!Array.isArray(people)) {
+            savePeople(DEFAULT_PEOPLE);
+            return [...DEFAULT_PEOPLE];
+        }
+
+        return people;
+
+    } catch (error) {
+        console.error(
+            "人物データの読み込みに失敗しました:",
+            error
+        );
+
+        savePeople(DEFAULT_PEOPLE);
+
+        return [...DEFAULT_PEOPLE];
+    }
+}
+
+
+function getPersonName(personId) {
+    const people = getPeople();
+
+    const person = people.find(
+        p => p.id === personId
+    );
+
+    return person ? person.name : personId;
+}
+
+
+function getPersonIdByName(name) {
+    const people = getPeople();
+
+    const person = people.find(
+        p => p.name === name
+    );
+
+    return person ? person.id : name;
+}
+
+
+// ============================================================
+// サーバーから人物名を同期
+// ============================================================
+
+function syncPeopleFromServer(schedules) {
+
+    const people = getPeople();
+
+    let changed = false;
+
+    schedules.forEach(schedule => {
+
+        const names = Array.isArray(schedule.person)
+            ? schedule.person
+            : [];
+
+        names.forEach(name => {
+
+            if (!name) {
+                return;
+            }
+
+            const exists = people.some(
+                person => person.name === name
+            );
+
+            if (!exists) {
+
+                people.push({
+                    id:
+                        "person_" +
+                        Date.now() +
+                        "_" +
+                        Math.random()
+                            .toString(36)
+                            .slice(2),
+
+                    name
+                });
+
+                changed = true;
+            }
+        });
+    });
+
+    if (changed) {
+        savePeople(people);
+    }
+}
+
+
+// ============================================================
+// 予定データ
+// ============================================================
+
+let events = [];
+
+let selectedEvent = null;
+
+let isEditing = false;
+
+
+// ============================================================
+// ★ 現在表示している月
+// ============================================================
+
+// ここだけが「現在の月」を管理する場所。
+// カレンダー・一覧・空き状況すべてがこれを使う。
+
+const now = new Date();
+
+let year = now.getFullYear();
+let month = now.getMonth();
+
+
+// ============================================================
+// ★ 現在の画面
+// ============================================================
+
+let currentView = "calendar";
+
+
+// ============================================================
+// ★ 月表示を更新
+// ============================================================
 
 function updateMonthDisplay() {
+
+    if (!currentMonth) {
+        return;
+    }
 
     currentMonth.textContent =
         `${year}年${month + 1}月`;
 }
 
 
-// =========================
-// 人物データ保存
-// =========================
+// ============================================================
+// ★ 月を移動
+// ============================================================
 
-function savePeople() {
+function changeMonth(diff) {
 
-    localStorage.setItem(
-        "mySchedulePeople",
-        JSON.stringify(people)
+    month += diff;
+
+    if (month < 0) {
+        month = 11;
+        year--;
+    }
+
+    if (month > 11) {
+        month = 0;
+        year++;
+    }
+
+    // 月表示を先に更新
+    updateMonthDisplay();
+
+    // 現在いる画面を再描画
+    refreshCurrentView();
+
+    // 個人予定の日付一覧も更新
+    updatePersonalScheduleDates();
+}
+
+
+// ============================================================
+// 日付関連
+// ============================================================
+
+function padNumber(number) {
+    return String(number).padStart(2, "0");
+}
+
+
+function getMonthPrefix() {
+
+    return (
+        `${year}-${padNumber(month + 1)}-`
     );
 }
 
 
-// =========================
-// 人物名を取得
-// =========================
+function isEventInCurrentMonth(event) {
 
-function getPersonName(personId) {
-
-    const person =
-        people.find(
-            person =>
-                person.id === personId
-        );
-
-    if (person) {
-        return person.name;
+    if (!event || !event.date) {
+        return false;
     }
 
-    return personId;
+    return event.date.startsWith(
+        getMonthPrefix()
+    );
 }
 
 
-// =========================
-// 人物名からIDを取得
-// =========================
-
-function getPersonIdByName(personName) {
-
-    const person =
-        people.find(
-            person =>
-                person.name === personName
-        );
-
-    if (person) {
-        return person.id;
-    }
-
-    return personName;
-}
-
-
-// =========================
-// 表示用の時間
-// =========================
+// ============================================================
+// 表示用時刻
+// ============================================================
 
 function getDisplayTime(event) {
 
-    if (
-        event.timeType === "time" ||
-        !event.timeType
-    ) {
-
-        return event.time || "";
+    if (!event) {
+        return "";
     }
 
-    const timeTypeNames = {
-        morning: "🌅 朝",
-        afternoon: "☀️ 昼",
-        evening: "🌆 夕方",
-        night: "🌙 夜",
-        allday: "📅 一日中"
-    };
+    if (event.timeType === "morning") {
+        return "朝";
+    }
 
-    return (
-        timeTypeNames[event.timeType] ||
-        ""
-    );
+    if (event.timeType === "afternoon") {
+        return "昼";
+    }
+
+    if (event.timeType === "evening") {
+        return "夜";
+    }
+
+    if (event.timeType === "night") {
+        return "深夜";
+    }
+
+    if (event.timeType === "allday") {
+        return "終日";
+    }
+
+    if (event.time) {
+        return event.time;
+    }
+
+    return "";
 }
 
 
-// =========================
-// 現在の画面を更新
-// =========================
+// ============================================================
+// 現在の画面を再描画
+// ============================================================
 
 function refreshCurrentView() {
 
-    // 月表示は必ず最初に更新
+    // ★ どの画面でも月表示を更新
     updateMonthDisplay();
 
-
-    if (
-        availabilityView.style.display !==
-        "none"
-    ) {
-
-        renderAvailability();
-
-    } else if (
-        !calendar.classList.contains("hidden")
-    ) {
+    if (currentView === "calendar") {
 
         showCalendar();
 
-    } else {
+        return;
+    }
+
+    if (currentView === "list") {
 
         showList();
+
+        return;
+    }
+
+    if (currentView === "availability") {
+
+        renderAvailability();
+
+        return;
     }
 }
 
 
-// =========================
-// 人物フィルター更新
-// =========================
+// ============================================================
+// 人物フィルター
+// ============================================================
 
 function updatePersonFilter() {
 
+    if (!personFilter) {
+        return;
+    }
+
+    const people = getPeople();
+
     const currentValue =
-        personFilter.value;
+        personFilter.value || "all";
 
     personFilter.innerHTML = "";
 
@@ -379,49 +495,51 @@ function updatePersonFilter() {
     allOption.value = "all";
     allOption.textContent = "全員";
 
-    personFilter.appendChild(
-        allOption
-    );
+    personFilter.appendChild(allOption);
 
     people.forEach(person => {
 
         const option =
             document.createElement("option");
 
-        option.value =
-            person.id;
+        option.value = person.id;
+        option.textContent = person.name;
 
-        option.textContent =
-            person.name;
-
-        personFilter.appendChild(
-            option
-        );
+        personFilter.appendChild(option);
     });
 
-    if (
-        people.some(
-            person =>
-                person.id === currentValue
-        )
-    ) {
+    const stillExists =
+        Array.from(personFilter.options)
+            .some(option =>
+                option.value === currentValue
+            );
 
-        personFilter.value =
-            currentValue;
-
+    if (stillExists) {
+        personFilter.value = currentValue;
     } else {
-
-        personFilter.value =
-            "all";
+        personFilter.value = "all";
     }
 }
 
 
-// =========================
-// 予定追加画面の参加者更新
-// =========================
+// ============================================================
+// 空き状況用人物チェックボックス
+// ============================================================
 
 function updatePeopleCheckboxes() {
+
+    if (!peopleCheckboxes) {
+        return;
+    }
+
+    const people = getPeople();
+
+    const checkedIds =
+        Array.from(
+            peopleCheckboxes.querySelectorAll(
+                "input[type='checkbox']:checked"
+            )
+        ).map(input => input.value);
 
     peopleCheckboxes.innerHTML = "";
 
@@ -430,26 +548,50 @@ function updatePeopleCheckboxes() {
         const label =
             document.createElement("label");
 
-        label.innerHTML = `
-            <input
-                type="checkbox"
-                value="${person.id}"
-            >
-            ${person.name}
-        `;
+        label.style.marginRight = "10px";
 
-        peopleCheckboxes.appendChild(
-            label
+        const checkbox =
+            document.createElement("input");
+
+        checkbox.type = "checkbox";
+        checkbox.value = person.id;
+
+        checkbox.checked =
+            checkedIds.length === 0 ||
+            checkedIds.includes(person.id);
+
+        checkbox.addEventListener(
+            "change",
+            renderAvailability
         );
+
+        label.appendChild(checkbox);
+
+        label.appendChild(
+            document.createTextNode(
+                " " + person.name
+            )
+        );
+
+        peopleCheckboxes.appendChild(label);
     });
 }
 
 
-// =========================
-// 個人予定の人物選択を更新
-// =========================
+// ============================================================
+// 個人予定の人物選択
+// ============================================================
 
 function updatePersonalSchedulePeople() {
+
+    if (!personalSchedulePerson) {
+        return;
+    }
+
+    const people = getPeople();
+
+    const currentValue =
+        personalSchedulePerson.value;
 
     personalSchedulePerson.innerHTML = "";
 
@@ -458,24 +600,31 @@ function updatePersonalSchedulePeople() {
         const option =
             document.createElement("option");
 
-        option.value =
-            person.id;
+        option.value = person.id;
+        option.textContent = person.name;
 
-        option.textContent =
-            person.name;
-
-        personalSchedulePerson.appendChild(
-            option
-        );
+        personalSchedulePerson.appendChild(option);
     });
+
+    if (
+        currentValue &&
+        people.some(p => p.id === currentValue)
+    ) {
+        personalSchedulePerson.value =
+            currentValue;
+    }
 }
 
 
-// =========================
-// 個人予定の日付一覧を作る
-// =========================
+// ============================================================
+// 個人予定の日付一覧
+// ============================================================
 
 function updatePersonalScheduleDates() {
+
+    if (!personalScheduleDates) {
+        return;
+    }
 
     personalScheduleDates.innerHTML = "";
 
@@ -486,16 +635,6 @@ function updatePersonalScheduleDates() {
             0
         ).getDate();
 
-    const weekDays = [
-        "日",
-        "月",
-        "火",
-        "水",
-        "木",
-        "金",
-        "土"
-    ];
-
     for (
         let day = 1;
         day <= daysInMonth;
@@ -503,35 +642,26 @@ function updatePersonalScheduleDates() {
     ) {
 
         const date =
-            `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-        const dateObject =
-            new Date(
-                year,
-                month,
-                day
-            );
-
-        const weekDay =
-            weekDays[dateObject.getDay()];
+            `${year}-${padNumber(month + 1)}-${padNumber(day)}`;
 
         const label =
             document.createElement("label");
 
-        label.style.display =
-            "block";
+        label.style.display = "block";
 
-        label.style.marginBottom =
-            "6px";
+        const checkbox =
+            document.createElement("input");
 
-        label.innerHTML = `
-            <input
-                type="checkbox"
-                value="${date}"
-                class="personal-schedule-date-checkbox"
-            >
-            ${month + 1}/${day}（${weekDay}）
-        `;
+        checkbox.type = "checkbox";
+        checkbox.value = date;
+
+        label.appendChild(checkbox);
+
+        label.appendChild(
+            document.createTextNode(
+                ` ${month + 1}/${day}`
+            )
+        );
 
         personalScheduleDates.appendChild(
             label
@@ -540,784 +670,535 @@ function updatePersonalScheduleDates() {
 }
 
 
-// =========================
-// サーバー側の人を
-// カレンダー側へ取り込む
-// =========================
+// ============================================================
+// 個人予定の日付全選択
+// ============================================================
 
-function syncPeopleFromServer(serverSchedules) {
+if (selectAllPersonalScheduleDates) {
 
-    serverSchedules.forEach(
-        schedule => {
+    selectAllPersonalScheduleDates.addEventListener(
+        "click",
+        () => {
 
-            const personNames =
-                Array.isArray(schedule.person)
-                    ? schedule.person
-                    : [];
+            const checkboxes =
+                personalScheduleDates.querySelectorAll(
+                    "input[type='checkbox']"
+                );
 
-            personNames.forEach(
-                personName => {
-
-                    const exists =
-                        people.some(
-                            person =>
-                                person.name ===
-                                personName
-                        );
-
-                    if (!exists) {
-
-                        people.push({
-                            id:
-                                "person_" +
-                                Date.now() +
-                                "_" +
-                                Math.random()
-                                    .toString(36)
-                                    .substring(2, 8),
-
-                            name:
-                                personName
-                        });
-                    }
+            checkboxes.forEach(
+                checkbox => {
+                    checkbox.checked = true;
                 }
             );
         }
     );
-
-    savePeople();
-
-    updatePersonFilter();
-    updatePeopleCheckboxes();
-    updatePersonalSchedulePeople();
 }
 
 
-// =========================
-// 人を追加
-// =========================
+if (clearAllPersonalScheduleDates) {
 
-addPersonButton.addEventListener(
-    "click",
-    () => {
+    clearAllPersonalScheduleDates.addEventListener(
+        "click",
+        () => {
 
-        const name =
-            prompt(
-                "追加する人の名前を入力してください"
+            const checkboxes =
+                personalScheduleDates.querySelectorAll(
+                    "input[type='checkbox']"
+                );
+
+            checkboxes.forEach(
+                checkbox => {
+                    checkbox.checked = false;
+                }
             );
-
-        if (!name) {
-            return;
         }
+    );
+}
 
-        const trimmedName =
-            name.trim();
 
-        if (trimmedName === "") {
+// ============================================================
+// 人物追加
+// ============================================================
 
-            alert(
-                "名前を入力してください。"
-            );
+if (addPersonButton) {
 
-            return;
+    addPersonButton.addEventListener(
+        "click",
+        () => {
+
+            const name =
+                prompt("追加する名前を入力してください");
+
+            if (!name) {
+                return;
+            }
+
+            const people = getPeople();
+
+            const exists =
+                people.some(
+                    person => person.name === name
+                );
+
+            if (exists) {
+                alert("その名前はすでに存在します。");
+                return;
+            }
+
+            people.push({
+                id:
+                    "person_" +
+                    Date.now(),
+
+                name
+            });
+
+            savePeople(people);
+
+            updatePersonFilter();
+            updatePeopleCheckboxes();
+            updatePersonalSchedulePeople();
+
+            if (peopleModal &&
+                peopleModal.style.display !== "none") {
+
+                showPeopleManagement();
+            }
         }
-
-        const alreadyExists =
-            people.some(
-                person =>
-                    person.name ===
-                    trimmedName
-            );
-
-        if (alreadyExists) {
-
-            alert(
-                "その名前はすでに登録されています。"
-            );
-
-            return;
-        }
-
-        const newPerson = {
-            id:
-                "person_" +
-                Date.now() +
-                "_" +
-                Math.random()
-                    .toString(36)
-                    .substring(2, 8),
-
-            name:
-                trimmedName
-        };
-
-        people.push(
-            newPerson
-        );
-
-        savePeople();
-
-        updatePersonFilter();
-        updatePeopleCheckboxes();
-        updatePersonalSchedulePeople();
-
-        alert(
-            `${trimmedName}さんを追加しました！`
-        );
-    }
-);
+    );
+}
 
 
-// =========================
-// 人物管理画面
-// =========================
+// ============================================================
+// 人物管理
+// ============================================================
 
 function showPeopleManagement() {
+
+    if (!peopleManagementList) {
+        return;
+    }
+
+    const people = getPeople();
 
     peopleManagementList.innerHTML = "";
 
     people.forEach(person => {
 
-        const personRow =
+        const row =
             document.createElement("div");
 
-        personRow.style.marginBottom =
-            "10px";
+        row.style.display = "flex";
+        row.style.alignItems = "center";
+        row.style.gap = "8px";
+        row.style.marginBottom = "8px";
 
-
-        const personName =
+        const name =
             document.createElement("span");
 
-        personName.textContent =
-            person.name;
+        name.textContent = person.name;
 
-        personName.style.marginRight =
-            "10px";
-
-
-        // 名前変更
-        const editButton =
-            document.createElement("button");
-
-        editButton.textContent =
-            "✏️ 名前変更";
-
-        editButton.addEventListener(
-            "click",
-            () => {
-
-                const newName =
-                    prompt(
-                        `「${person.name}」の新しい名前を入力してください`,
-                        person.name
-                    );
-
-                if (newName === null) {
-                    return;
-                }
-
-                const trimmedName =
-                    newName.trim();
-
-                if (trimmedName === "") {
-
-                    alert(
-                        "名前を入力してください。"
-                    );
-
-                    return;
-                }
-
-                const duplicate =
-                    people.some(
-                        otherPerson =>
-                            otherPerson.id !== person.id &&
-                            otherPerson.name ===
-                                trimmedName
-                    );
-
-                if (duplicate) {
-
-                    alert(
-                        "その名前はすでに登録されています。"
-                    );
-
-                    return;
-                }
-
-                person.name =
-                    trimmedName;
-
-                savePeople();
-
-                updatePersonFilter();
-                updatePeopleCheckboxes();
-                updatePersonalSchedulePeople();
-
-                showPeopleManagement();
-                refreshCurrentView();
-            }
-        );
-
-
-        // 削除
         const deleteButton =
             document.createElement("button");
 
-        deleteButton.textContent =
-            "🗑️ 削除";
-
-        deleteButton.style.marginLeft =
-            "5px";
+        deleteButton.textContent = "削除";
 
         deleteButton.addEventListener(
             "click",
             () => {
 
-                const confirmed =
-                    confirm(
-                        `「${person.name}」をメンバーから削除しますか？`
-                    );
-
-                if (!confirmed) {
+                if (
+                    !confirm(
+                        `${person.name} を削除しますか？`
+                    )
+                ) {
                     return;
                 }
 
-                people =
-                    people.filter(
-                        p =>
-                            p.id !== person.id
+                const newPeople =
+                    getPeople().filter(
+                        p => p.id !== person.id
                     );
 
-                savePeople();
+                savePeople(newPeople);
 
                 updatePersonFilter();
                 updatePeopleCheckboxes();
                 updatePersonalSchedulePeople();
 
                 showPeopleManagement();
-                refreshCurrentView();
             }
         );
 
+        row.appendChild(name);
+        row.appendChild(deleteButton);
 
-        personRow.appendChild(
-            personName
-        );
-
-        personRow.appendChild(
-            editButton
-        );
-
-        personRow.appendChild(
-            deleteButton
-        );
-
-        peopleManagementList.appendChild(
-            personRow
-        );
+        peopleManagementList.appendChild(row);
     });
 }
 
 
-// =========================
-// 人物管理を開く
-// =========================
+if (managePeopleButton) {
 
-managePeopleButton.addEventListener(
-    "click",
-    () => {
+    managePeopleButton.addEventListener(
+        "click",
+        () => {
 
-        showPeopleManagement();
+            showPeopleManagement();
 
-        peopleModal.classList.remove(
-            "hidden"
-        );
-    }
-);
-
-
-// =========================
-// 人物管理を閉じる
-// =========================
-
-closePeopleModal.addEventListener(
-    "click",
-    () => {
-
-        peopleModal.classList.add(
-            "hidden"
-        );
-    }
-);
-
-
-// =========================
-// 通常予定の時間タイプ
-// =========================
-
-eventTimeType.addEventListener(
-    "change",
-    () => {
-
-        if (
-            eventTimeType.value === "time"
-        ) {
-
-            eventTimeLabel.style.display =
-                "block";
-
-        } else {
-
-            eventTimeLabel.style.display =
-                "none";
+            if (peopleModal) {
+                peopleModal.style.display = "block";
+            }
         }
-    }
-);
+    );
+}
 
 
-// =========================
-// 個人予定の時間タイプ
-// =========================
+if (closePeopleModal) {
 
-personalScheduleTimeType.addEventListener(
-    "change",
-    () => {
+    closePeopleModal.addEventListener(
+        "click",
+        () => {
 
-        if (
-            personalScheduleTimeType.value === "time"
-        ) {
-
-            personalScheduleTimeLabel.style.display =
-                "block";
-
-        } else {
-
-            personalScheduleTimeLabel.style.display =
-                "none";
+            if (peopleModal) {
+                peopleModal.style.display = "none";
+            }
         }
+    );
+}
+
+
+// ============================================================
+// 時刻タイプ変更
+// ============================================================
+
+function updateEventTimeInput() {
+
+    if (
+        !eventTimeType ||
+        !eventTimeLabel
+    ) {
+        return;
     }
-);
+
+    if (eventTimeType.value === "time") {
+
+        eventTimeLabel.style.display =
+            "block";
+
+    } else {
+
+        eventTimeLabel.style.display =
+            "none";
+    }
+}
 
 
-// =========================
-// 個人予定追加画面を開く
-// =========================
+if (eventTimeType) {
 
-addPersonalScheduleButton.addEventListener(
-    "click",
-    () => {
+    eventTimeType.addEventListener(
+        "change",
+        updateEventTimeInput
+    );
+}
 
-        updatePersonalSchedulePeople();
 
-        updatePersonalScheduleDates();
+// ============================================================
+// 個人予定の時刻タイプ変更
+// ============================================================
 
-        personalScheduleTimeType.value =
-            "time";
+function updatePersonalScheduleTimeInput() {
 
-        personalScheduleTime.value =
-            "";
+    if (
+        !personalScheduleTimeType ||
+        !personalScheduleTimeLabel
+    ) {
+        return;
+    }
+
+    if (
+        personalScheduleTimeType.value === "time"
+    ) {
 
         personalScheduleTimeLabel.style.display =
             "block";
 
-        personalScheduleModal.classList.remove(
-            "hidden"
-        );
-    }
-);
-
-
-// =========================
-// 個人予定追加画面を閉じる
-// =========================
-
-closePersonalScheduleModal.addEventListener(
-    "click",
-    () => {
-
-        personalScheduleModal.classList.add(
-            "hidden"
-        );
-    }
-);
-
-
-// =========================
-// 個人予定をまとめて保存
-// =========================
-
-savePersonalScheduleButton.addEventListener(
-    "click",
-    async () => {
-
-        const personId =
-            personalSchedulePerson.value;
-
-        const timeType =
-            personalScheduleTimeType.value;
-
-        const time =
-            personalScheduleTime.value;
-
-        const checkedDates =
-            Array.from(
-                document.querySelectorAll(
-                    ".personal-schedule-date-checkbox:checked"
-                )
-            ).map(
-                checkbox =>
-                    checkbox.value
-            );
-
-
-        if (!personId) {
-
-            alert(
-                "人を選択してください！"
-            );
-
-            return;
-        }
-
-
-        if (
-            checkedDates.length === 0
-        ) {
-
-            alert(
-                "日付を1つ以上選択してください！"
-            );
-
-            return;
-        }
-
-
-        if (
-            timeType === "time" &&
-            !time
-        ) {
-
-            alert(
-                "時刻を指定する場合は時間を入力してください！"
-            );
-
-            return;
-        }
-
-
-        const personName =
-            getPersonName(personId);
-
-
-        savePersonalScheduleButton.disabled =
-            true;
-
-
-        try {
-
-            for (
-                const date of checkedDates
-            ) {
-
-                const requestBody = {
-
-                    date:
-                        date,
-
-                    time:
-                        timeType === "time"
-                            ? time
-                            : "",
-
-                    timeType:
-                        timeType,
-
-                    title:
-                        "個人予定",
-
-                    person:
-                        [personName]
-                };
-
-
-                const response =
-                    await fetch(
-                        `${API_BASE_URL}/schedules`,
-                        {
-                            method: "POST",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    requestBody
-                                )
-                        }
-                    );
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        `${date} の保存に失敗しました`
-                    );
-                }
-            }
-
-
-            personalScheduleModal.classList.add(
-                "hidden"
-            );
-
-
-            await loadEventsFromServer();
-
-
-            alert(
-                `${checkedDates.length}件の個人予定を登録しました！`
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "個人予定の保存に失敗しました：",
-                error
-            );
-
-            alert(
-                "個人予定の登録中にエラーが発生しました。"
-            );
-
-        } finally {
-
-            savePersonalScheduleButton.disabled =
-                false;
-        }
-    }
-);
-
-
-// =========================
-// 予定詳細を表示
-// =========================
-
-function openEventModal(event) {
-
-    selectedEvent = event;
-
-    modalTitle.textContent =
-        event.title;
-
-    modalDate.textContent =
-        `📅 ${event.date}`;
-
-    if (
-        event.timeType === "time" ||
-        !event.timeType
-    ) {
-
-        modalTime.textContent =
-            `🕐 ${event.time || ""}〜`;
-
     } else {
 
-        modalTime.textContent =
-            getDisplayTime(event);
+        personalScheduleTimeLabel.style.display =
+            "none";
     }
+}
 
 
-    modalPeople.innerHTML = "";
+if (personalScheduleTimeType) {
 
-    event.people.forEach(
-        personId => {
-
-            const personElement =
-                document.createElement("li");
-
-            personElement.textContent =
-                getPersonName(personId);
-
-            modalPeople.appendChild(
-                personElement
-            );
-        }
-    );
-
-
-    eventModal.classList.remove(
-        "hidden"
+    personalScheduleTimeType.addEventListener(
+        "change",
+        updatePersonalScheduleTimeInput
     );
 }
 
 
-// =========================
-// カレンダー表示
-// =========================
+// ============================================================
+// 個人予定モーダルを開く
+// ============================================================
+
+if (addPersonalScheduleButton) {
+
+    addPersonalScheduleButton.addEventListener(
+        "click",
+        () => {
+
+            updatePersonalSchedulePeople();
+
+            updatePersonalScheduleDates();
+
+            if (personalScheduleModal) {
+                personalScheduleModal.style.display =
+                    "block";
+            }
+        }
+    );
+}
+
+
+// ============================================================
+// 個人予定モーダルを閉じる
+// ============================================================
+
+if (closePersonalScheduleModal) {
+
+    closePersonalScheduleModal.addEventListener(
+        "click",
+        () => {
+
+            if (personalScheduleModal) {
+                personalScheduleModal.style.display =
+                    "none";
+            }
+        }
+    );
+}
+
+
+// ============================================================
+// 個人予定保存
+// ============================================================
+
+if (savePersonalScheduleButton) {
+
+    savePersonalScheduleButton.addEventListener(
+        "click",
+        async () => {
+
+            const personId =
+                personalSchedulePerson.value;
+
+            const personName =
+                getPersonName(personId);
+
+            const timeType =
+                personalScheduleTimeType.value;
+
+            const time =
+                timeType === "time"
+                    ? personalScheduleTime.value
+                    : "";
+
+            const selectedDates =
+                Array.from(
+                    personalScheduleDates.querySelectorAll(
+                        "input[type='checkbox']:checked"
+                    )
+                ).map(
+                    checkbox => checkbox.value
+                );
+
+            if (selectedDates.length === 0) {
+
+                alert(
+                    "日付を1つ以上選択してください。"
+                );
+
+                return;
+            }
+
+            try {
+
+                for (const date of selectedDates) {
+
+                    const response =
+                        await fetch(
+                            `${API_BASE_URL}/schedules`,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify({
+                                        date,
+                                        time,
+                                        timeType,
+                                        title: "個人予定",
+                                        person: [
+                                            personName
+                                        ]
+                                    })
+                            }
+                        );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP ${response.status}`
+                        );
+                    }
+                }
+
+                await loadEventsFromServer();
+
+                if (personalScheduleModal) {
+                    personalScheduleModal.style.display =
+                        "none";
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "個人予定の保存に失敗しました:",
+                    error
+                );
+
+                alert(
+                    "個人予定の保存に失敗しました。"
+                );
+            }
+        }
+    );
+}
+
+
+// ============================================================
+// カレンダー描画
+// ============================================================
 
 function showCalendar() {
 
+    if (!calendar) {
+        return;
+    }
+
+    // ★ 月表示は必ずここでも更新
+    updateMonthDisplay();
+
     calendar.innerHTML = "";
-
-    const weekDays = [
-        "日",
-        "月",
-        "火",
-        "水",
-        "木",
-        "金",
-        "土"
-    ];
-
-    weekDays.forEach(day => {
-
-        const element =
-            document.createElement("div");
-
-        element.className =
-            "day-name";
-
-        element.textContent =
-            day;
-
-        calendar.appendChild(
-            element
-        );
-    });
-
 
     const firstDay =
         new Date(
             year,
             month,
             1
-        );
+        ).getDay();
 
-    const lastDay =
+    const daysInMonth =
         new Date(
             year,
             month + 1,
             0
-        );
+        ).getDate();
 
-    const startDay =
-        firstDay.getDay();
-
-    const daysInMonth =
-        lastDay.getDate();
-
-
+    // 空白
     for (
         let i = 0;
-        i < startDay;
+        i < firstDay;
         i++
     ) {
 
-        const emptyDay =
+        const emptyCell =
             document.createElement("div");
 
-        emptyDay.className =
-            "day";
+        emptyCell.className =
+            "calendar-day empty";
 
         calendar.appendChild(
-            emptyDay
+            emptyCell
         );
     }
 
-
+    // 日付
     for (
         let day = 1;
         day <= daysInMonth;
         day++
     ) {
 
-        const dayElement =
+        const dateString =
+            `${year}-${padNumber(month + 1)}-${padNumber(day)}`;
+
+        const dayCell =
             document.createElement("div");
 
-        dayElement.className =
-            "day";
+        dayCell.className =
+            "calendar-day";
 
-
-        const numberElement =
+        const dateHeader =
             document.createElement("div");
 
-        numberElement.className =
-            "day-number";
+        dateHeader.className =
+            "calendar-date";
 
-        numberElement.textContent =
+        dateHeader.textContent =
             day;
 
-        dayElement.appendChild(
-            numberElement
+        dayCell.appendChild(
+            dateHeader
         );
 
-
-        const dateString =
-            `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-
-        const selectedPerson =
-            personFilter.value;
-
+        // ----------------------------------------------------
+        // その日の予定
+        // ----------------------------------------------------
 
         const todayEvents =
-            events.filter(
-                event => {
+            events.filter(event => {
 
-                    const dateMatches =
-                        event.date ===
-                        dateString;
+                const dateMatches =
+                    event.date === dateString;
 
-                    const personMatches =
-                        selectedPerson === "all" ||
-                        event.people.includes(
-                            selectedPerson
-                        );
-
-                    return (
-                        dateMatches &&
-                        personMatches
+                const personMatches =
+                    selectedPerson === "all" ||
+                    event.people.includes(
+                        selectedPerson
                     );
-                }
+
+                return (
+                    dateMatches &&
+                    personMatches
+                );
+            });
+
+        // ----------------------------------------------------
+        // 個人予定と通常予定
+        // ----------------------------------------------------
+
+        const personalEvents =
+            todayEvents.filter(
+                event =>
+                    event.title === "個人予定"
             );
 
+        const normalEvents =
+            todayEvents.filter(
+                event =>
+                    event.title !== "個人予定"
+            );
 
-        // =========================
-        // 個人予定をまとめる
-        // =========================
-
-        const personalEvents = [];
-        const normalEvents = [];
-
-        todayEvents.forEach(
-            event => {
-
-                if (
-                    event.title ===
-                    "個人予定"
-                ) {
-
-                    personalEvents.push(
-                        event
-                    );
-
-                } else {
-
-                    normalEvents.push(
-                        event
-                    );
-                }
-            }
-        );
-
-
-        // =========================
-        // 通常予定を表示
-        // =========================
+        // ----------------------------------------------------
+        // 通常予定
+        // ----------------------------------------------------
 
         normalEvents.forEach(
             event => {
@@ -1326,553 +1207,329 @@ function showCalendar() {
                     document.createElement("div");
 
                 eventElement.className =
-                    "event";
+                    "calendar-event";
+
+                const peopleText =
+                    event.people
+                        .map(getPersonName)
+                        .join("・");
+
+                const timeText =
+                    getDisplayTime(event);
 
                 eventElement.textContent =
-                    `${getDisplayTime(event)} ${event.title}`;
+                    timeText
+                        ? `${timeText} ${event.title}`
+                        : event.title;
 
-                eventElement.addEventListener(
-                    "click",
-                    () => {
+                if (peopleText) {
 
-                        openEventModal(
-                            event
-                        );
-                    }
-                );
+                    const peopleElement =
+                        document.createElement("span");
 
-                dayElement.appendChild(
-                    eventElement
-                );
-            }
-        );
+                    peopleElement.textContent =
+                        ` ${peopleText}`;
 
-
-        // =========================
-        // 個人予定を
-        // 同じ時間ごとにまとめる
-        // =========================
-
-        const personalGroups = {};
-
-        personalEvents.forEach(
-            event => {
-
-                const groupKey =
-                    `${event.timeType || "time"}_${event.time || ""}`;
-
-                if (
-                    !personalGroups[groupKey]
-                ) {
-
-                    personalGroups[groupKey] = [];
+                    eventElement.appendChild(
+                        peopleElement
+                    );
                 }
 
-                personalGroups[groupKey].push(
-                    event
-                );
-            }
-        );
-
-
-        Object.values(
-            personalGroups
-        ).forEach(
-            group => {
-
-                const eventElement =
-                    document.createElement("div");
-
-                eventElement.className =
-                    "event personal-schedule-event";
-
-
-                const personNames = [];
-
-                group.forEach(
-                    event => {
-
-                        event.people.forEach(
-                            personId => {
-
-                                const personName =
-                                    getPersonName(
-                                        personId
-                                    );
-
-                                if (
-                                    !personNames.includes(
-                                        personName
-                                    )
-                                ) {
-
-                                    personNames.push(
-                                        personName
-                                    );
-                                }
-                            }
-                        );
-                    }
-                );
-
-
-                eventElement.textContent =
-                    `${getDisplayTime(group[0])} 個人予定 ${personNames.join("・")}`;
-
-
                 eventElement.addEventListener(
                     "click",
                     () => {
-
-                        openEventModal(
-                            group[0]
-                        );
+                        openEventModal(event);
                     }
                 );
 
-
-                dayElement.appendChild(
+                dayCell.appendChild(
                     eventElement
                 );
             }
         );
 
+        // ----------------------------------------------------
+        // 個人予定
+        // ----------------------------------------------------
+
+        if (personalEvents.length > 0) {
+
+            const grouped = {};
+
+            personalEvents.forEach(
+                event => {
+
+                    const key =
+                        `${event.timeType}_${event.time || ""}`;
+
+                    if (!grouped[key]) {
+                        grouped[key] = [];
+                    }
+
+                    grouped[key].push(event);
+                }
+            );
+
+            Object.values(grouped).forEach(
+                group => {
+
+                    const peopleNames =
+                        group
+                            .flatMap(
+                                event =>
+                                    event.people
+                            )
+                            .map(
+                                getPersonName
+                            )
+                            .filter(
+                                (name, index, array) =>
+                                    array.indexOf(name) === index
+                            );
+
+                    const eventElement =
+                        document.createElement("div");
+
+                    eventElement.className =
+                        "calendar-event personal-event";
+
+                    const timeText =
+                        getDisplayTime(group[0]);
+
+                    eventElement.textContent =
+                        timeText
+                            ? `${timeText} 個人予定 ${peopleNames.join("・")}`
+                            : `個人予定 ${peopleNames.join("・")}`;
+
+                    dayCell.appendChild(
+                        eventElement
+                    );
+                }
+            );
+        }
 
         calendar.appendChild(
-            dayElement
+            dayCell
         );
     }
-
-
-    updateMonthDisplay();
 }
 
 
-// =========================
-// 前の月
-// =========================
-
-prevMonthButton.addEventListener(
-    "click",
-    () => {
-
-        month--;
-
-        if (month < 0) {
-
-            month = 11;
-            year--;
-        }
-
-        refreshCurrentView();
-    }
-);
-
-
-// =========================
-// 次の月
-// =========================
-
-nextMonthButton.addEventListener(
-    "click",
-    () => {
-
-        month++;
-
-        if (month > 11) {
-
-            month = 0;
-            year++;
-        }
-
-        refreshCurrentView();
-    }
-);
-
-
-// =========================
-// 人物フィルター
-// =========================
-
-personFilter.addEventListener(
-    "change",
-    () => {
-
-        refreshCurrentView();
-    }
-);
-
-
-// =========================
+// ============================================================
 // 一覧表示
-// =========================
+// ============================================================
 
 function showList() {
 
+    if (!listView) {
+        return;
+    }
+
+    // ★ 一覧でも必ず現在月を表示
+    updateMonthDisplay();
+
     listView.innerHTML = "";
 
-    const selectedPerson =
-        personFilter.value;
-
-
-    // =========================
-    // 現在表示中の月
-    // =========================
-
-    const currentMonthString =
-        getCurrentMonthString();
-
-
-    // =========================
-    // 現在表示中の月だけに絞る
-    // =========================
+    // ★ 現在表示中の月だけに絞る
+    const monthPrefix =
+        getMonthPrefix();
 
     const filteredEvents =
         events
-            .filter(
-                event => {
+            .filter(event => {
 
-                    // 予定の日付が
-                    // 現在表示中の年月で始まるか
-                    const monthMatches =
-                        typeof event.date === "string" &&
-                        event.date.startsWith(
-                            currentMonthString + "-"
-                        );
-
-
-                    // 人物フィルター
-                    const personMatches =
-                        selectedPerson === "all" ||
-                        event.people.includes(
-                            selectedPerson
-                        );
-
-
-                    return (
-                        monthMatches &&
-                        personMatches
+                const monthMatches =
+                    event.date &&
+                    event.date.startsWith(
+                        monthPrefix
                     );
-                }
-            )
 
+                const personMatches =
+                    selectedPerson === "all" ||
+                    event.people.includes(
+                        selectedPerson
+                    );
 
-            // =========================
-            // 日付・時間順
-            // =========================
-
+                return (
+                    monthMatches &&
+                    personMatches
+                );
+            })
             .sort(
                 (a, b) => {
 
-                    const dateCompare =
-                        a.date.localeCompare(
-                            b.date
-                        );
+                    const dateA =
+                        `${a.date}_${a.time || ""}`;
 
-                    if (
-                        dateCompare !== 0
-                    ) {
+                    const dateB =
+                        `${b.date}_${b.time || ""}`;
 
-                        return dateCompare;
-                    }
-
-                    return (
-                        (a.time || "")
-                            .localeCompare(
-                                b.time || ""
-                            )
+                    return dateA.localeCompare(
+                        dateB
                     );
                 }
             );
 
+    if (filteredEvents.length === 0) {
 
-    // =========================
-    // 予定を一覧表示
-    // =========================
+        const empty =
+            document.createElement("div");
+
+        empty.textContent =
+            "この月の予定はありません。";
+
+        listView.appendChild(
+            empty
+        );
+
+        return;
+    }
 
     filteredEvents.forEach(
         event => {
 
-            const eventElement =
+            const item =
                 document.createElement("div");
 
-            eventElement.className =
+            item.className =
                 "list-event";
 
+            const peopleText =
+                event.people
+                    .map(getPersonName)
+                    .join("・");
 
-            // =========================
-            // 日付・時間
-            // =========================
+            const timeText =
+                getDisplayTime(event);
 
-            const dateElement =
-                document.createElement("div");
+            const dateParts =
+                event.date.split("-");
 
-            dateElement.className =
-                "list-event-date";
+            const dateText =
+                `${Number(dateParts[1])}/${Number(dateParts[2])}`;
 
-            dateElement.textContent =
-                `📅 ${event.date} ${getDisplayTime(event)}`;
+            item.textContent =
+                `${dateText}　`;
 
+            if (timeText) {
 
-            // =========================
-            // 予定名
-            // =========================
+                item.textContent +=
+                    `${timeText}　`;
+            }
 
-            const titleElement =
-                document.createElement("div");
-
-            titleElement.className =
-                "list-event-title";
-
-            titleElement.textContent =
+            item.textContent +=
                 event.title;
 
+            if (peopleText) {
 
-            // =========================
-            // 参加者
-            // =========================
+                item.textContent +=
+                    `　${peopleText}`;
+            }
 
-            const peopleElement =
-                document.createElement("div");
-
-            peopleElement.className =
-                "list-event-people";
-
-            peopleElement.textContent =
-                "参加者：" +
-                event.people
-                    .map(
-                        personId =>
-                            getPersonName(
-                                personId
-                            )
-                    )
-                    .join("、");
-
-
-            // =========================
-            // 要素を追加
-            // =========================
-
-            eventElement.appendChild(
-                dateElement
-            );
-
-            eventElement.appendChild(
-                titleElement
-            );
-
-            eventElement.appendChild(
-                peopleElement
-            );
-
-
-            // =========================
-            // クリックで詳細表示
-            // =========================
-
-            eventElement.addEventListener(
+            item.addEventListener(
                 "click",
                 () => {
-
-                    openEventModal(
-                        event
-                    );
+                    openEventModal(event);
                 }
             );
 
-
             listView.appendChild(
-                eventElement
+                item
             );
         }
     );
-
-
-    // 月表示も必ず更新
-    updateMonthDisplay();
 }
 
 
-// =========================
-// カレンダー表示ボタン
-// =========================
-
-calendarViewButton.addEventListener(
-    "click",
-    () => {
-
-        calendar.classList.remove(
-            "hidden"
-        );
-
-        listView.classList.add(
-            "hidden"
-        );
-
-        availabilityView.style.display =
-            "none";
-
-        showCalendar();
-    }
-);
-
-
-// =========================
-// 一覧表示ボタン
-// =========================
-
-listViewButton.addEventListener(
-    "click",
-    () => {
-
-        calendar.classList.add(
-            "hidden"
-        );
-
-        listView.classList.remove(
-            "hidden"
-        );
-
-        availabilityView.style.display =
-            "none";
-
-        showList();
-    }
-);
-
-
-// =========================
-// 空き状況用
-// 時間を「朝・昼・夜」に変換
-// =========================
+// ============================================================
+// 空き状況
+// ============================================================
 
 function getAvailabilityTimeType(event) {
 
-    // 一日中
-    if (
-        event.timeType === "allday"
-    ) {
+    if (!event) {
+        return [];
+    }
 
+    if (event.timeType === "allday") {
         return [
             "昼×",
             "夜×"
         ];
     }
 
-
-    // 朝
-    if (
-        event.timeType === "morning"
-    ) {
-
+    if (event.timeType === "morning") {
         return [];
     }
 
-
-    // 昼
-    if (
-        event.timeType === "afternoon"
-    ) {
-
+    if (event.timeType === "afternoon") {
         return [
             "昼×"
         ];
     }
 
-
-    // 夕方・夜
     if (
         event.timeType === "evening" ||
         event.timeType === "night"
     ) {
-
         return [
             "夜×"
         ];
     }
 
-
-    // 通常の時刻指定
-    if (
-        event.timeType === "time" ||
-        !event.timeType
-    ) {
+    if (event.timeType === "time") {
 
         if (!event.time) {
             return [];
         }
 
-
         const hour =
-            parseInt(
-                event.time.split(":")[0],
-                10
+            Number(
+                event.time.split(":")[0]
             );
 
-
-        // 00:00〜10:59
-        // 朝扱い
         if (hour < 11) {
             return [];
         }
 
-
-        // 11:00〜18:59
-        // 昼
-        if (hour < 19) {
-
+        if (hour <= 18) {
             return [
                 "昼×"
             ];
         }
 
-
-        // 19:00〜23:59
-        // 夜
         return [
             "夜×"
         ];
     }
 
-
     return [];
 }
 
 
-// =========================
-// 空き状況の人物フィルター
-// =========================
+// ============================================================
+// 空き状況 人物フィルター
+// ============================================================
 
 function renderAvailabilityPeopleFilter() {
 
-    const oldCheckedIds =
+    if (!availabilityPeopleFilter) {
+        return;
+    }
+
+    const people =
+        getPeople();
+
+    const oldChecked =
         Array.from(
             availabilityPeopleFilter.querySelectorAll(
-                'input[type="checkbox"]:checked'
+                "input[type='checkbox']:checked"
             )
         ).map(
-            checkbox =>
-                checkbox.value
-        );
-
-    const hasOldCheckboxes =
-        availabilityPeopleFilter.querySelector(
-            'input[type="checkbox"]'
+            input => input.value
         );
 
     availabilityPeopleFilter.innerHTML = "";
-
-    const title =
-        document.createElement("strong");
-
-    title.textContent =
-        "表示する人：";
-
-    availabilityPeopleFilter.appendChild(
-        title
-    );
-
 
     people.forEach(
         person => {
@@ -1881,13 +1538,10 @@ function renderAvailabilityPeopleFilter() {
                 document.createElement("label");
 
             label.style.marginRight =
-                "12px";
-
+                "10px";
 
             const checkbox =
-                document.createElement(
-                    "input"
-                );
+                document.createElement("input");
 
             checkbox.type =
                 "checkbox";
@@ -1896,20 +1550,15 @@ function renderAvailabilityPeopleFilter() {
                 person.id;
 
             checkbox.checked =
-                !hasOldCheckboxes ||
-                oldCheckedIds.includes(
+                oldChecked.length === 0 ||
+                oldChecked.includes(
                     person.id
                 );
 
-
             checkbox.addEventListener(
                 "change",
-                () => {
-
-                    renderAvailability();
-                }
+                renderAvailability
             );
-
 
             label.appendChild(
                 checkbox
@@ -1917,7 +1566,7 @@ function renderAvailabilityPeopleFilter() {
 
             label.appendChild(
                 document.createTextNode(
-                    " " + person.name
+                    ` ${person.name}`
                 )
             );
 
@@ -1929,38 +1578,53 @@ function renderAvailabilityPeopleFilter() {
 }
 
 
-// =========================
-// 空き状況を表示
-// =========================
+// ============================================================
+// 空き状況描画
+// ============================================================
 
 function renderAvailability() {
+
+    if (!availabilityTable) {
+        return;
+    }
+
+    // ★ 空き状況でも月表示を更新
+    updateMonthDisplay();
 
     renderAvailabilityPeopleFilter();
 
     availabilityTable.innerHTML = "";
 
+    const people =
+        getPeople();
 
-    const checkedPeopleIds =
+    const checkedPeople =
         Array.from(
-            availabilityPeopleFilter.querySelectorAll(
-                'input[type="checkbox"]:checked'
-            )
+            availabilityPeopleFilter
+                ? availabilityPeopleFilter.querySelectorAll(
+                    "input[type='checkbox']:checked"
+                )
+                : []
         ).map(
-            checkbox =>
-                checkbox.value
+            checkbox => checkbox.value
         );
 
+    const targetPeople =
+        checkedPeople.length > 0
+            ? people.filter(
+                person =>
+                    checkedPeople.includes(
+                        person.id
+                    )
+            )
+            : people;
 
-    const table =
-        document.createElement("table");
-
-    table.className =
-        "availability-table";
-
+    // --------------------------------------------------------
+    // ヘッダー
+    // --------------------------------------------------------
 
     const headerRow =
         document.createElement("tr");
-
 
     const dateHeader =
         document.createElement("th");
@@ -1972,17 +1636,8 @@ function renderAvailability() {
         dateHeader
     );
 
-
-    people.forEach(
+    targetPeople.forEach(
         person => {
-
-            if (
-                !checkedPeopleIds.includes(
-                    person.id
-                )
-            ) {
-                return;
-            }
 
             const th =
                 document.createElement("th");
@@ -1996,15 +1651,13 @@ function renderAvailability() {
         }
     );
 
-
-    table.appendChild(
+    availabilityTable.appendChild(
         headerRow
     );
 
-
-    // =========================
-    // 現在の月の日数
-    // =========================
+    // --------------------------------------------------------
+    // 現在の月の日付
+    // --------------------------------------------------------
 
     const daysInMonth =
         new Date(
@@ -2013,20 +1666,17 @@ function renderAvailability() {
             0
         ).getDate();
 
-
     for (
         let day = 1;
         day <= daysInMonth;
         day++
     ) {
 
-        const date =
-            `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
+        const dateString =
+            `${year}-${padNumber(month + 1)}-${padNumber(day)}`;
 
         const row =
             document.createElement("tr");
-
 
         const dateCell =
             document.createElement("td");
@@ -2038,71 +1688,79 @@ function renderAvailability() {
             dateCell
         );
 
-
-        people.forEach(
+        targetPeople.forEach(
             person => {
-
-                if (
-                    !checkedPeopleIds.includes(
-                        person.id
-                    )
-                ) {
-                    return;
-                }
-
 
                 const cell =
                     document.createElement("td");
 
-                const unavailableTimes =
-                    [];
+                const personEvents =
+                    events.filter(
+                        event => {
 
+                            return (
+                                event.date ===
+                                    dateString &&
+                                event.people.includes(
+                                    person.id
+                                )
+                            );
+                        }
+                    );
 
-                events.forEach(
+                const unavailable =
+                    new Set();
+
+                personEvents.forEach(
                     event => {
 
-                        if (
-                            event.date !== date
-                        ) {
-                            return;
-                        }
-
-                        if (
-                            !event.people.includes(
-                                person.id
-                            )
-                        ) {
-                            return;
-                        }
-
-
-                        const times =
+                        const types =
                             getAvailabilityTimeType(
                                 event
                             );
 
-
-                        times.forEach(
-                            time => {
-
-                                if (
-                                    !unavailableTimes.includes(
-                                        time
-                                    )
-                                ) {
-
-                                    unavailableTimes.push(
-                                        time
-                                    );
-                                }
+                        types.forEach(
+                            type => {
+                                unavailable.add(
+                                    type
+                                );
                             }
                         );
                     }
                 );
 
+                const daytime =
+                    document.createElement("span");
 
-                cell.textContent =
-                    unavailableTimes.join(" ");
+                daytime.textContent =
+                    unavailable.has("昼×")
+                        ? "×"
+                        : "○";
+
+                const separator =
+                    document.createTextNode(
+                        " / "
+                    );
+
+                const nighttime =
+                    document.createElement("span");
+
+                nighttime.textContent =
+                    unavailable.has("夜×")
+                        ? "×"
+                        : "○";
+
+                cell.appendChild(
+                    daytime
+                );
+
+                cell.appendChild(
+                    separator
+                );
+
+                cell.appendChild(
+                    nighttime
+                );
 
                 row.appendChild(
                     cell
@@ -2110,506 +1768,596 @@ function renderAvailability() {
             }
         );
 
-
-        table.appendChild(
+        availabilityTable.appendChild(
             row
         );
     }
-
-
-    availabilityTable.appendChild(
-        table
-    );
-
-
-    // 月表示も必ず更新
-    updateMonthDisplay();
 }
 
 
-// =========================
-// 空き状況ボタン
-// =========================
+// ============================================================
+// 画面切り替え
+// ============================================================
 
-availabilityViewButton.addEventListener(
-    "click",
-    () => {
+if (calendarViewButton) {
 
-        calendar.classList.add(
-            "hidden"
-        );
+    calendarViewButton.addEventListener(
+        "click",
+        () => {
 
-        listView.classList.add(
-            "hidden"
-        );
+            currentView =
+                "calendar";
 
-        availabilityView.style.display =
-            "block";
-
-        renderAvailability();
-    }
-);
-
-
-// =========================
-// 詳細画面を閉じる
-// =========================
-
-closeModal.addEventListener(
-    "click",
-    () => {
-
-        eventModal.classList.add(
-            "hidden"
-        );
-
-        selectedEvent = null;
-    }
-);
-
-
-// =========================
-// 新規予定追加
-// =========================
-
-addEventButton.addEventListener(
-    "click",
-    () => {
-
-        isEditing = false;
-        selectedEvent = null;
-
-
-        document.getElementById(
-            "eventDate"
-        ).value = "";
-
-        document.getElementById(
-            "eventTime"
-        ).value = "";
-
-        document.getElementById(
-            "eventTitle"
-        ).value = "";
-
-
-        eventTimeType.value =
-            "time";
-
-        eventTimeLabel.style.display =
-            "block";
-
-
-        const checkboxes =
-            document.querySelectorAll(
-                ".people-checkboxes input[type='checkbox']"
-            );
-
-
-        checkboxes.forEach(
-            checkbox => {
-
-                checkbox.checked =
-                    false;
-            }
-        );
-
-
-        addEventModal.classList.remove(
-            "hidden"
-        );
-    }
-);
-
-
-// =========================
-// 予定入力画面を閉じる
-// =========================
-
-closeAddEventModal.addEventListener(
-    "click",
-    () => {
-
-        addEventModal.classList.add(
-            "hidden"
-        );
-    }
-);
-
-
-// =========================
-// 編集ボタン
-// =========================
-
-editEventButton.addEventListener(
-    "click",
-    () => {
-
-        if (!selectedEvent) {
-            return;
-        }
-
-
-        isEditing = true;
-
-
-        eventModal.classList.add(
-            "hidden"
-        );
-
-
-        document.getElementById(
-            "eventDate"
-        ).value =
-            selectedEvent.date;
-
-
-        eventTimeType.value =
-            selectedEvent.timeType ||
-            "time";
-
-
-        document.getElementById(
-            "eventTime"
-        ).value =
-            selectedEvent.time || "";
-
-
-        if (
-            eventTimeType.value === "time"
-        ) {
-
-            eventTimeLabel.style.display =
-                "block";
-
-        } else {
-
-            eventTimeLabel.style.display =
-                "none";
-        }
-
-
-        document.getElementById(
-            "eventTitle"
-        ).value =
-            selectedEvent.title;
-
-
-        const checkboxes =
-            document.querySelectorAll(
-                ".people-checkboxes input[type='checkbox']"
-            );
-
-
-        checkboxes.forEach(
-            checkbox => {
-
-                checkbox.checked =
-                    selectedEvent.people.includes(
-                        checkbox.value
-                    );
-            }
-        );
-
-
-        addEventModal.classList.remove(
-            "hidden"
-        );
-    }
-);
-
-
-// =========================
-// 予定保存
-// =========================
-
-saveEventButton.addEventListener(
-    "click",
-    async () => {
-
-        const wasEditing =
-            isEditing &&
-            !!selectedEvent;
-
-
-        const date =
-            document.getElementById(
-                "eventDate"
-            ).value;
-
-
-        const time =
-            document.getElementById(
-                "eventTime"
-            ).value;
-
-
-        const title =
-            document.getElementById(
-                "eventTitle"
-            ).value.trim();
-
-
-        const checkedPeople =
-            document.querySelectorAll(
-                ".people-checkboxes input[type='checkbox']:checked"
-            );
-
-
-        const checkedPersonIds =
-            Array.from(
-                checkedPeople
-            ).map(
-                checkbox =>
-                    checkbox.value
-            );
-
-
-        const timeType =
-            eventTimeType.value;
-
-
-        if (
-            !date ||
-            !title ||
-            checkedPersonIds.length === 0
-        ) {
-
-            alert(
-                "日付・予定名・参加者をすべて入力してください！"
-            );
-
-            return;
-        }
-
-
-        if (
-            timeType === "time" &&
-            !time
-        ) {
-
-            alert(
-                "時刻を指定する場合は時間を入力してください！"
-            );
-
-            return;
-        }
-
-
-        const personNames =
-            checkedPersonIds.map(
-                personId =>
-                    getPersonName(personId)
-            );
-
-
-        const requestBody = {
-
-            date:
-                date,
-
-            time:
-                timeType === "time"
-                    ? time
-                    : "",
-
-            timeType:
-                timeType,
-
-            title:
-                title,
-
-            person:
-                personNames
-        };
-
-
-        try {
-
-            let response;
-
-
-            if (wasEditing) {
-
-                response =
-                    await fetch(
-                        `${API_BASE_URL}/schedules/${selectedEvent.id}`,
-                        {
-                            method: "PUT",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    requestBody
-                                )
-                        }
-                    );
-
-            } else {
-
-                response =
-                    await fetch(
-                        `${API_BASE_URL}/schedules`,
-                        {
-                            method: "POST",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    requestBody
-                                )
-                        }
-                    );
+            if (calendar) {
+                calendar.style.display =
+                    "";
             }
 
-
-            if (!response.ok) {
-
-                throw new Error(
-                    "予定の保存に失敗しました"
-                );
+            if (listView) {
+                listView.style.display =
+                    "none";
             }
 
+            if (availabilityView) {
+                availabilityView.style.display =
+                    "none";
+            }
 
-            const result =
-                await response.json();
+            refreshCurrentView();
+        }
+    );
+}
 
 
-            console.log(
-                "サーバーへ予定を保存しました：",
-                result
-            );
+if (listViewButton) {
+
+    listViewButton.addEventListener(
+        "click",
+        () => {
+
+            currentView =
+                "list";
+
+            if (calendar) {
+                calendar.style.display =
+                    "none";
+            }
+
+            if (listView) {
+                listView.style.display =
+                    "";
+            }
+
+            if (availabilityView) {
+                availabilityView.style.display =
+                    "none";
+            }
+
+            refreshCurrentView();
+        }
+    );
+}
 
 
-            addEventModal.classList.add(
-                "hidden"
-            );
+if (availabilityViewButton) {
 
+    availabilityViewButton.addEventListener(
+        "click",
+        () => {
+
+            currentView =
+                "availability";
+
+            if (calendar) {
+                calendar.style.display =
+                    "none";
+            }
+
+            if (listView) {
+                listView.style.display =
+                    "none";
+            }
+
+            if (availabilityView) {
+                availabilityView.style.display =
+                    "";
+            }
+
+            refreshCurrentView();
+        }
+    );
+}
+
+
+// ============================================================
+// ★ 月移動ボタン
+// ============================================================
+
+if (prevMonthButton) {
+
+    prevMonthButton.addEventListener(
+        "click",
+        () => {
+            changeMonth(-1);
+        }
+    );
+}
+
+
+if (nextMonthButton) {
+
+    nextMonthButton.addEventListener(
+        "click",
+        () => {
+            changeMonth(1);
+        }
+    );
+}
+
+
+// ============================================================
+// 予定追加モーダル
+// ============================================================
+
+if (addEventButton) {
+
+    addEventButton.addEventListener(
+        "click",
+        () => {
 
             isEditing = false;
             selectedEvent = null;
 
+            if (addEventModal) {
+                addEventModal.style.display =
+                    "block";
+            }
 
-            await loadEventsFromServer();
+            if (eventTimeType) {
+                eventTimeType.value =
+                    "time";
+            }
 
-
-            alert(
-                wasEditing
-                    ? "予定を編集しました！"
-                    : "予定を保存しました！"
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "予定の保存に失敗しました：",
-                error
-            );
-
-            alert(
-                "予定をサーバーに保存できませんでした。"
-            );
+            updateEventTimeInput();
         }
+    );
+}
+
+
+if (closeAddEventModal) {
+
+    closeAddEventModal.addEventListener(
+        "click",
+        () => {
+
+            if (addEventModal) {
+                addEventModal.style.display =
+                    "none";
+            }
+        }
+    );
+}
+
+
+// ============================================================
+// 予定詳細モーダル
+// ============================================================
+
+function openEventModal(event) {
+
+    selectedEvent = event;
+    isEditing = false;
+
+    if (modalTitle) {
+        modalTitle.textContent =
+            event.title || "";
     }
-);
+
+    if (modalDate) {
+        modalDate.textContent =
+            event.date || "";
+    }
+
+    if (modalTime) {
+        modalTime.textContent =
+            getDisplayTime(event)
+                ? `${getDisplayTime(event)}`
+                : "";
+    }
+
+    if (modalPeople) {
+
+        modalPeople.textContent =
+            event.people
+                .map(getPersonName)
+                .join("・");
+    }
+
+    if (modalNotice) {
+
+        modalNotice.textContent =
+            event.announcement === false
+                ? "通知なし"
+                : "通知あり";
+    }
+
+    if (editEventButton) {
+        editEventButton.style.display =
+            "";
+    }
+
+    if (deleteEventButton) {
+        deleteEventButton.style.display =
+            "";
+    }
+
+    if (eventModal) {
+        eventModal.style.display =
+            "block";
+    }
+}
 
 
-// =========================
-// 予定削除
-// =========================
+// ============================================================
+// 詳細モーダルを閉じる
+// ============================================================
 
-deleteEventButton.addEventListener(
-    "click",
-    async () => {
+if (closeModal) {
 
-        if (!selectedEvent) {
-            return;
+    closeModal.addEventListener(
+        "click",
+        () => {
+
+            if (eventModal) {
+                eventModal.style.display =
+                    "none";
+            }
         }
+    );
+}
 
 
-        const confirmed =
-            confirm(
-                "この予定を削除しますか？"
-            );
+// ============================================================
+// 編集
+// ============================================================
 
+if (editEventButton) {
 
-        if (!confirmed) {
-            return;
-        }
+    editEventButton.addEventListener(
+        "click",
+        () => {
 
+            if (!selectedEvent) {
+                return;
+            }
 
-        try {
+            isEditing = true;
 
-            const response =
-                await fetch(
-                    `${API_BASE_URL}/schedules/${selectedEvent.id}`,
-                    {
-                        method: "DELETE"
-                    }
+            if (eventModal) {
+                eventModal.style.display =
+                    "none";
+            }
+
+            if (addEventModal) {
+                addEventModal.style.display =
+                    "block";
+            }
+
+            const titleInput =
+                document.getElementById(
+                    "eventTitle"
                 );
 
+            const dateInput =
+                document.getElementById(
+                    "eventDate"
+                );
 
-            if (!response.ok) {
+            const timeInput =
+                document.getElementById(
+                    "eventTime"
+                );
 
-                throw new Error(
-                    "予定の削除に失敗しました"
+            const peopleContainer =
+                document.getElementById(
+                    "eventPeople"
+                );
+
+            if (titleInput) {
+                titleInput.value =
+                    selectedEvent.title || "";
+            }
+
+            if (dateInput) {
+                dateInput.value =
+                    selectedEvent.date || "";
+            }
+
+            if (eventTimeType) {
+                eventTimeType.value =
+                    selectedEvent.timeType || "time";
+            }
+
+            if (timeInput) {
+                timeInput.value =
+                    selectedEvent.time || "";
+            }
+
+            if (peopleContainer) {
+
+                const checkboxes =
+                    peopleContainer.querySelectorAll(
+                        "input[type='checkbox']"
+                    );
+
+                checkboxes.forEach(
+                    checkbox => {
+
+                        checkbox.checked =
+                            selectedEvent.people.includes(
+                                checkbox.value
+                            );
+                    }
                 );
             }
 
-
-            const result =
-                await response.json();
-
-
-            console.log(
-                "サーバーから予定を削除しました：",
-                result
-            );
-
-
-            selectedEvent = null;
-
-
-            eventModal.classList.add(
-                "hidden"
-            );
-
-
-            await loadEventsFromServer();
-
-
-            alert(
-                "予定を削除しました！"
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "予定の削除に失敗しました：",
-                error
-            );
-
-            alert(
-                "予定をサーバーから削除できませんでした。"
-            );
+            updateEventTimeInput();
         }
-    }
-);
+    );
+}
 
 
-// =========================
-// サーバーから予定を読み込む
-// =========================
+// ============================================================
+// 予定保存
+// ============================================================
+
+if (saveEventButton) {
+
+    saveEventButton.addEventListener(
+        "click",
+        async () => {
+
+            const titleInput =
+                document.getElementById(
+                    "eventTitle"
+                );
+
+            const dateInput =
+                document.getElementById(
+                    "eventDate"
+                );
+
+            const timeInput =
+                document.getElementById(
+                    "eventTime"
+                );
+
+            const peopleContainer =
+                document.getElementById(
+                    "eventPeople"
+                );
+
+            const title =
+                titleInput
+                    ? titleInput.value.trim()
+                    : "";
+
+            const date =
+                dateInput
+                    ? dateInput.value
+                    : "";
+
+            const timeType =
+                eventTimeType
+                    ? eventTimeType.value
+                    : "time";
+
+            const time =
+                timeType === "time" &&
+                timeInput
+                    ? timeInput.value
+                    : "";
+
+            const selectedPeople =
+                peopleContainer
+                    ? Array.from(
+                        peopleContainer.querySelectorAll(
+                            "input[type='checkbox']:checked"
+                        )
+                    ).map(
+                        checkbox =>
+                            getPersonName(
+                                checkbox.value
+                            )
+                    )
+                    : [];
+
+            if (!title) {
+
+                alert(
+                    "タイトルを入力してください。"
+                );
+
+                return;
+            }
+
+            if (!date) {
+
+                alert(
+                    "日付を入力してください。"
+                );
+
+                return;
+            }
+
+            try {
+
+                const body = {
+                    date,
+                    time,
+                    timeType,
+                    title,
+                    person: selectedPeople
+                };
+
+                let response;
+
+                if (
+                    isEditing &&
+                    selectedEvent
+                ) {
+
+                    response =
+                        await fetch(
+                            `${API_BASE_URL}/schedules/${selectedEvent.id}`,
+                            {
+                                method: "PUT",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify(body)
+                            }
+                        );
+
+                } else {
+
+                    response =
+                        await fetch(
+                            `${API_BASE_URL}/schedules`,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify(body)
+                            }
+                        );
+                }
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP ${response.status}`
+                    );
+                }
+
+                await loadEventsFromServer();
+
+                if (addEventModal) {
+                    addEventModal.style.display =
+                        "none";
+                }
+
+                isEditing = false;
+                selectedEvent = null;
+
+            } catch (error) {
+
+                console.error(
+                    "予定保存に失敗しました:",
+                    error
+                );
+
+                alert(
+                    "予定の保存に失敗しました。"
+                );
+            }
+        }
+    );
+}
+
+
+// ============================================================
+// 予定削除
+// ============================================================
+
+if (deleteEventButton) {
+
+    deleteEventButton.addEventListener(
+        "click",
+        async () => {
+
+            if (!selectedEvent) {
+                return;
+            }
+
+            if (
+                !confirm(
+                    "この予定を削除しますか？"
+                )
+            ) {
+                return;
+            }
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_BASE_URL}/schedules/${selectedEvent.id}`,
+                        {
+                            method: "DELETE"
+                        }
+                    );
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `HTTP ${response.status}`
+                    );
+                }
+
+                await loadEventsFromServer();
+
+                selectedEvent = null;
+
+                if (eventModal) {
+                    eventModal.style.display =
+                        "none";
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "予定削除に失敗しました:",
+                    error
+                );
+
+                alert(
+                    "予定の削除に失敗しました。"
+                );
+            }
+        }
+    );
+}
+
+
+// ============================================================
+// 人物フィルター変更
+// ============================================================
+
+if (personFilter) {
+
+    personFilter.addEventListener(
+        "change",
+        () => {
+
+            refreshCurrentView();
+        }
+    );
+}
+
+
+// ============================================================
+// イベントデータをサーバーから取得
+// ============================================================
 
 async function loadEventsFromServer() {
 
@@ -2620,48 +2368,31 @@ async function loadEventsFromServer() {
                 `${API_BASE_URL}/schedules`
             );
 
-
         if (!response.ok) {
 
             throw new Error(
-                "予定データの取得に失敗しました"
+                `HTTP ${response.status}`
             );
         }
 
-
-        const serverSchedules =
+        const schedules =
             await response.json();
 
-
-        if (
-            !Array.isArray(serverSchedules)
-        ) {
-
-            throw new Error(
-                "予定データの形式が正しくありません"
-            );
-        }
-
-
-        // サーバー側の人を
-        // カレンダー側へ反映
+        // 人物名をローカルに同期
         syncPeopleFromServer(
-            serverSchedules
+            schedules
         );
 
-
-        // サーバーの予定
-        // ↓
-        // カレンダーの予定へ変換
         events =
-            serverSchedules.map(
+            schedules.map(
                 schedule => {
 
                     const personNames =
-                        Array.isArray(schedule.person)
+                        Array.isArray(
+                            schedule.person
+                        )
                             ? schedule.person
                             : [];
-
 
                     return {
 
@@ -2672,15 +2403,14 @@ async function loadEventsFromServer() {
                             schedule.date,
 
                         time:
-                            schedule.time ||
-                            "",
+                            schedule.time || "",
 
                         timeType:
                             schedule.timeType ||
                             "time",
 
                         title:
-                            schedule.title,
+                            schedule.title || "",
 
                         people:
                             personNames.map(
@@ -2688,8 +2418,7 @@ async function loadEventsFromServer() {
                             ),
 
                         announcement:
-                            schedule.announcement !==
-                            false,
+                            schedule.announcement !== false,
 
                         announcementMinutes:
                             schedule.announcementMinutes ||
@@ -2698,44 +2427,62 @@ async function loadEventsFromServer() {
                 }
             );
 
+        updatePersonFilter();
+        updatePeopleCheckboxes();
+        updatePersonalSchedulePeople();
 
+        // ★ 現在の画面を再描画
         refreshCurrentView();
-
-
-        console.log(
-            "サーバーから予定を読み込みました：",
-            events
-        );
-
 
     } catch (error) {
 
         console.error(
-            "予定の読み込みに失敗しました：",
+            "予定の読み込みに失敗しました:",
             error
         );
-
-        alert(
-            "サーバーから予定を読み込めませんでした。"
-        );
-
-        refreshCurrentView();
     }
 }
 
 
-// =========================
-// 初期表示
-// =========================
+// ============================================================
+// 初期化
+// ============================================================
 
-availabilityView.style.display =
-    "none";
+// 初期画面
+currentView = "calendar";
 
+// 月表示
+updateMonthDisplay();
+
+// 人物
 updatePersonFilter();
 updatePeopleCheckboxes();
 updatePersonalSchedulePeople();
 
-updateMonthDisplay();
+// 個人予定の日付
+updatePersonalScheduleDates();
 
+// 空き状況を非表示
+if (availabilityView) {
+    availabilityView.style.display =
+        "none";
+}
+
+// 一覧を非表示
+if (listView) {
+    listView.style.display =
+        "none";
+}
+
+// カレンダー表示
+if (calendar) {
+    calendar.style.display =
+        "";
+}
+
+// 時刻入力状態
+updateEventTimeInput();
+updatePersonalScheduleTimeInput();
+
+// 予定取得
 loadEventsFromServer();
-```
