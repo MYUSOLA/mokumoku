@@ -367,3 +367,12 @@ main {
     background: #eeeeee;
     color: #666666;
 }
+
+
+/* メンバー編集画面のスクロール修正 */
+#peopleModal .modal-content {
+    max-height: calc(100vh - 40px);
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
