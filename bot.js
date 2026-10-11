@@ -135,9 +135,12 @@ async function deleteScheduleFromDatabase(id) {
     return rows && rows.length > 0 ? rows[0] : null;
 }
 
+
+let lastGeneratedId = 0;
+
 // 一意なIDを作る
 function createNewId() {
-    let id = Date.now();
+    let id = Math.max(Date.now(), lastGeneratedId + 1);
 
     while (
         schedules.some(schedule => Number(schedule.id) === id)
@@ -145,8 +148,11 @@ function createNewId() {
         id++;
     }
 
+    lastGeneratedId = id;
+
     return id;
 }
+
 
 // データベース保存に失敗した場合のログ
 function logError(context, error) {
