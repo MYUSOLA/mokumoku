@@ -1,3 +1,4 @@
+```js
 const { REST, Routes, SlashCommandBuilder } = require("discord.js");
 
 const commands = [
@@ -40,7 +41,6 @@ const commands = [
 
         .toJSON(),
 
-
     // =========================
     // 予定削除
     // =========================
@@ -71,7 +71,6 @@ const commands = [
         )
 
         .toJSON(),
-
 
     // =========================
     // 参加者編集
@@ -128,7 +127,6 @@ const commands = [
 
         .toJSON(),
 
-
     // =========================
     // 個人予定をまとめて追加
     // =========================
@@ -158,20 +156,9 @@ const commands = [
                 .setRequired(true)
         )
 
-        .toJSON(),
-
-
-    // =========================
-    // 予定一覧
-    // =========================
-
-    new SlashCommandBuilder()
-        .setName("list-schedule")
-        .setDescription("予定を一覧表示します")
-
         .toJSON()
-];
 
+];
 
 const rest =
     new REST({
@@ -180,10 +167,8 @@ const rest =
         process.env.DISCORD_TOKEN
     );
 
-
 const CLIENT_ID =
     "1551324022711656598";
-
 
 (async () => {
 
@@ -192,7 +177,6 @@ const CLIENT_ID =
         console.log(
             "コマンド登録中..."
         );
-
 
         await rest.put(
 
@@ -206,11 +190,9 @@ const CLIENT_ID =
 
         );
 
-
         console.log(
             "コマンド登録成功！"
         );
-
 
     } catch (error) {
 
@@ -220,3 +202,4 @@ const CLIENT_ID =
     }
 
 })();
+```
