@@ -369,10 +369,26 @@ main {
 }
 
 
-/* メンバー編集画面のスクロール修正 */
+
+/* メンバー管理画面のスクロール修正 */
+#peopleModal {
+    overflow-y: auto;
+    align-items: flex-start;
+}
+
 #peopleModal .modal-content {
+    margin: auto;
     max-height: calc(100vh - 40px);
     max-height: calc(100dvh - 40px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#peopleModal #peopleManagementList {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
+    padding-right: 6px;
 }
