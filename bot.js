@@ -476,6 +476,26 @@ client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     try {
+        
+        // Discordコマンドの返信を本人だけに表示する
+        const originalReply = interaction.reply.bind(interaction);
+
+        interaction.reply = (options) => {
+            if (typeof options === "string") {
+                return originalReply({
+                    content: options,
+                    ephemeral: true
+                });
+            }
+
+            return originalReply({
+                ...options,
+                ephemeral: true
+            });
+        };
+
+
+        
         // -------------------------
         // 予定追加
         // -------------------------
