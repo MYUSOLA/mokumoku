@@ -636,50 +636,7 @@ client.on("interactionCreate", async interaction => {
             return;
         }
 
-        // -------------------------
-        // 予定一覧
-        // -------------------------
-
-        if (interaction.commandName === "list-schedule") {
-            if (schedules.length === 0) {
-                await interaction.reply("登録されている予定はないよ！");
-                return;
-            }
-
-            let message = "📅 登録されている予定\n\n";
-
-            schedules.forEach((schedule, index) => {
-                message +=
-                    `【${index + 1}】\n` +
-                    `📅 ${schedule.date}\n` +
-                    `⏰ ${getDisplayTime(schedule.time, schedule.timeType)}\n` +
-                    `👤 ${Array.isArray(schedule.person) ? schedule.person.join("、") : "なし"}\n` +
-                    `📝 ${schedule.title}\n` +
-                    `🆔 ID：${schedule.id}\n\n`;
-            });
-
-            // Discordのメッセージ上限を超えないよう分割
-            const chunks = [];
-            let chunk = "";
-
-            for (const line of message.split("\n")) {
-                if ((chunk + line + "\n").length > 1900) {
-                    chunks.push(chunk);
-                    chunk = "";
-                }
-                chunk += line + "\n";
-            }
-
-            if (chunk) chunks.push(chunk);
-
-            await interaction.reply(chunks[0]);
-
-            for (let i = 1; i < chunks.length; i++) {
-                await interaction.followUp(chunks[i]);
-            }
-
-            return;
-        }
+        
 
         // -------------------------
         // 予定削除
