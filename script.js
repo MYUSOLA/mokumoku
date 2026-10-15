@@ -5,9 +5,10 @@
 const API_BASE_URL = "https://mokumoku.onrender.com";
 
 
-// =========================
-// DOM取得
-// =========================
+
+ // =========================
+ // DOM取得
+ // =========================
 
 const addEventButton =
     document.getElementById("addEventButton");
@@ -99,6 +100,9 @@ const modalTime =
 const modalPeople =
     document.getElementById("modalPeople");
 
+const modalNote =
+    document.getElementById("modalNote");
+
 const modalNotice =
     document.getElementById("modalNotice");
 
@@ -110,6 +114,13 @@ const editEventButton =
 
 const deleteEventButton =
     document.getElementById("deleteEventButton");
+
+// =========================
+// 備考入力欄
+// =========================
+
+const eventNote =
+    document.getElementById("eventNote");
 
 
 // =========================
@@ -1097,7 +1108,7 @@ function openEventModal(event) {
             getDisplayTime(event);
     }
 
-
+    // 参加者を表示
     modalPeople.innerHTML = "";
 
     event.people.forEach(
@@ -1115,12 +1126,30 @@ function openEventModal(event) {
         }
     );
 
+    // 備考を表示
+    const note =
+        event.note || "";
+
+    if (note.trim() !== "") {
+
+        modalNote.textContent =
+            `📝 備考\n${note}`;
+
+        modalNote.style.display =
+            "block";
+
+    } else {
+
+        modalNote.textContent = "";
+
+        modalNote.style.display =
+            "none";
+    }
 
     eventModal.classList.remove(
         "hidden"
     );
 }
-
 
 // =========================
 // カレンダー表示
@@ -2133,7 +2162,6 @@ addEventButton.addEventListener(
         isEditing = false;
         selectedEvent = null;
 
-
         document.getElementById(
             "eventDate"
         ).value = "";
@@ -2146,6 +2174,8 @@ addEventButton.addEventListener(
             "eventTitle"
         ).value = "";
 
+        // 備考欄を空にする
+        eventNote.value = "";
 
         eventTimeType.value =
             "time";
@@ -2153,12 +2183,10 @@ addEventButton.addEventListener(
         eventTimeLabel.style.display =
             "block";
 
-
         const checkboxes =
             document.querySelectorAll(
                 ".people-checkboxes input[type='checkbox']"
             );
-
 
         checkboxes.forEach(
             checkbox => {
@@ -2168,13 +2196,11 @@ addEventButton.addEventListener(
             }
         );
 
-
         addEventModal.classList.remove(
             "hidden"
         );
     }
 );
-
 
 // =========================
 // 予定入力画面を閉じる
@@ -2191,7 +2217,8 @@ closeAddEventModal.addEventListener(
 );
 
 
-// =========================
+
+ // =========================
 // 編集ボタン
 // =========================
 
@@ -2203,31 +2230,25 @@ editEventButton.addEventListener(
             return;
         }
 
-
         isEditing = true;
-
 
         eventModal.classList.add(
             "hidden"
         );
-
 
         document.getElementById(
             "eventDate"
         ).value =
             selectedEvent.date;
 
-
         eventTimeType.value =
             selectedEvent.timeType ||
             "time";
-
 
         document.getElementById(
             "eventTime"
         ).value =
             selectedEvent.time || "";
-
 
         if (
             eventTimeType.value === "time"
@@ -2242,18 +2263,19 @@ editEventButton.addEventListener(
                 "none";
         }
 
-
         document.getElementById(
             "eventTitle"
         ).value =
             selectedEvent.title;
 
+        // 備考欄に保存済みの内容を表示
+        eventNote.value =
+            selectedEvent.note || "";
 
         const checkboxes =
             document.querySelectorAll(
                 ".people-checkboxes input[type='checkbox']"
             );
-
 
         checkboxes.forEach(
             checkbox => {
@@ -2265,7 +2287,6 @@ editEventButton.addEventListener(
             }
         );
 
-
         addEventModal.classList.remove(
             "hidden"
         );
@@ -2273,210 +2294,30 @@ editEventButton.addEventListener(
 );
 
 
-// =========================
-// 予定保存
-// =========================
 
-saveEventButton.addEventListener(
-    "click",
-    async () => {
+const requestBody = {
 
-        const wasEditing =
-            isEditing &&
-            !!selectedEvent;
+    date:
+        date,
 
+    time:
+        timeType === "time"
+            ? time
+            : "",
 
-        const date =
-            document.getElementById(
-                "eventDate"
-            ).value;
+    timeType:
+        timeType,
 
+    title:
+        title,
 
-        const time =
-            document.getElementById(
-                "eventTime"
-            ).value;
+    person:
+        personNames,
 
-
-        const title =
-            document.getElementById(
-                "eventTitle"
-            ).value.trim();
-
-
-        const checkedPeople =
-            document.querySelectorAll(
-                ".people-checkboxes input[type='checkbox']:checked"
-            );
-
-
-        const checkedPersonIds =
-            Array.from(
-                checkedPeople
-            ).map(
-                checkbox =>
-                    checkbox.value
-            );
-
-
-        const timeType =
-            eventTimeType.value;
-
-
-        // 入力チェック
-        if (
-            !date ||
-            !title ||
-            checkedPersonIds.length === 0
-        ) {
-
-            alert(
-                "日付・予定名・参加者をすべて入力してください！"
-            );
-
-            return;
-        }
-
-
-        if (
-            timeType === "time" &&
-            !time
-        ) {
-
-            alert(
-                "時刻を指定する場合は時間を入力してください！"
-            );
-
-            return;
-        }
-
-
-        const personNames =
-            checkedPersonIds.map(
-                personId =>
-                    getPersonName(personId)
-            );
-
-
-        const requestBody = {
-
-            date:
-                date,
-
-            time:
-                timeType === "time"
-                    ? time
-                    : "",
-
-            timeType:
-                timeType,
-
-            title:
-                title,
-
-            person:
-                personNames
-        };
-
-
-        try {
-
-            let response;
-
-
-            if (wasEditing) {
-
-                response =
-                    await fetch(
-                        `${API_BASE_URL}/schedules/${selectedEvent.id}`,
-                        {
-                            method: "PUT",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    requestBody
-                                )
-                        }
-                    );
-
-            } else {
-
-                response =
-                    await fetch(
-                        `${API_BASE_URL}/schedules`,
-                        {
-                            method: "POST",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    requestBody
-                                )
-                        }
-                    );
-            }
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    "予定の保存に失敗しました"
-                );
-            }
-
-
-            const result =
-                await response.json();
-
-
-            console.log(
-                "サーバーへ予定を保存しました：",
-                result
-            );
-
-
-            addEventModal.classList.add(
-                "hidden"
-            );
-
-
-            isEditing = false;
-            selectedEvent = null;
-
-
-            await loadEventsFromServer();
-
-
-            alert(
-                wasEditing
-                    ? "予定を編集しました！"
-                    : "予定を保存しました！"
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "予定の保存に失敗しました：",
-                error
-            );
-
-            alert(
-                "予定をサーバーに保存できませんでした。"
-            );
-        }
-    }
-);
-
+    // 備考
+    note:
+        eventNote.value.trim()
+};
 
 // =========================
 // 予定削除
@@ -2562,6 +2403,7 @@ deleteEventButton.addEventListener(
 );
 
 
+
 // =========================
 // サーバーから予定を読み込む
 // =========================
@@ -2575,7 +2417,6 @@ async function loadEventsFromServer() {
                 `${API_BASE_URL}/schedules`
             );
 
-
         if (!response.ok) {
 
             throw new Error(
@@ -2583,10 +2424,8 @@ async function loadEventsFromServer() {
             );
         }
 
-
         const serverSchedules =
             await response.json();
-
 
         if (
             !Array.isArray(serverSchedules)
@@ -2597,16 +2436,13 @@ async function loadEventsFromServer() {
             );
         }
 
-
         // サーバー側の人を
         // カレンダー側へ反映
         syncPeopleFromServer(
             serverSchedules
         );
 
-
-        // サーバーの予定
-        // ↓
+        // サーバーの予定を
         // カレンダーの予定へ変換
         events =
             serverSchedules.map(
@@ -2616,7 +2452,6 @@ async function loadEventsFromServer() {
                         Array.isArray(schedule.person)
                             ? schedule.person
                             : [];
-
 
                     return {
 
@@ -2637,6 +2472,10 @@ async function loadEventsFromServer() {
                         title:
                             schedule.title,
 
+                        // 備考を読み込む
+                        note:
+                            schedule.note || "",
+
                         people:
                             personNames.map(
                                 getPersonIdByName
@@ -2653,15 +2492,13 @@ async function loadEventsFromServer() {
                 }
             );
 
-
+        // 現在の画面を更新
         refreshCurrentView();
-
 
         console.log(
             "サーバーから予定を読み込みました：",
             events
         );
-
 
     } catch (error) {
 
@@ -2677,6 +2514,7 @@ async function loadEventsFromServer() {
         refreshCurrentView();
     }
 }
+
 
 
 // =========================
