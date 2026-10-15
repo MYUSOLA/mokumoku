@@ -20,14 +20,31 @@
             <button id="nextMonth">→</button>
         </div>
 
-        <div class="filters">
-            <label for="personFilter">表示する人：</label>
-            <select id="personFilter">
-                <option value="all">全員</option>
-            </select>
-            <button id="addPersonButton">＋ 人を追加</button>
-            <button id="managePeopleButton">👤 メンバー管理</button>
-        </div>
+        ```html
+<div class="filters">
+    <label>表示する人：</label>
+
+    <div class="person-filter-dropdown" id="personFilterDropdown">
+        <button
+            type="button"
+            id="personFilterButton"
+            aria-expanded="false"
+            aria-controls="personFilterMenu"
+        >
+            全員 ▼
+        </button>
+
+        <div
+            id="personFilterMenu"
+            class="person-filter-menu"
+            style="display: none;"
+        ></div>
+    </div>
+
+    <button id="addPersonButton">＋ 人を追加</button>
+    <button id="managePeopleButton">👤 メンバー管理</button>
+</div>
+```
 
         <div class="view-switch">
             <button id="calendarViewButton">📅 カレンダー</button>
