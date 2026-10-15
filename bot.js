@@ -557,6 +557,7 @@ client.on("interactionCreate", async interaction => {
 
         
         
+        
         // -------------------------
         // 予定追加
         // -------------------------
@@ -566,6 +567,7 @@ client.on("interactionCreate", async interaction => {
             const timeInput = interaction.options.getString("time");
             const personInput = interaction.options.getString("person");
             const title = interaction.options.getString("title");
+            const note = interaction.options.getString("note") || "";
 
             const date = parseDateInput(dateInput);
 
@@ -604,7 +606,7 @@ client.on("interactionCreate", async interaction => {
                 timeType: parsedTime.timeType,
                 title,
                 person: people,
-                note: "",
+                note,
                 announcement: true,
                 announcementMinutes: 30
             };
@@ -626,7 +628,8 @@ client.on("interactionCreate", async interaction => {
                 `📅 日付：${date}\n` +
                 `⏰ 時間：${getDisplayTime(saved.time, saved.timeType)}\n` +
                 `👤 人：${people.join("、")}\n` +
-                `📝 内容：${title}`
+                `📝 内容：${title}\n` +
+                `📌 備考：${note || "なし"}`
             );
 
             return;
@@ -640,6 +643,7 @@ client.on("interactionCreate", async interaction => {
             const dateInput = interaction.options.getString("date");
             const timeInput = interaction.options.getString("time");
             const personInput = interaction.options.getString("person");
+            const note = interaction.options.getString("note") || "";
 
             const dateInputs = dateInput
                 .trim()
@@ -696,7 +700,7 @@ client.on("interactionCreate", async interaction => {
                 timeType: parsedTime.timeType,
                 title: "個人予定",
                 person: [person],
-                note: "",
+                note,
                 announcement: true,
                 announcementMinutes: 30
             }));
@@ -708,7 +712,10 @@ client.on("interactionCreate", async interaction => {
                 ...rows.map(row => ({
                     ...row,
                     id: Number(row.id),
-                    person: Array.isArray(row.person) ? row.person : []
+                    person: Array.isArray(row.person)
+                        ? row.person
+                        : [],
+                    note: row.note || ""
                 }))
             );
 
@@ -720,13 +727,14 @@ client.on("interactionCreate", async interaction => {
                     `⏰ ${getDisplayTime(schedule.time, schedule.timeType)}\n`;
             });
 
-            message += `👤 ${person}\n📝 個人予定`;
+            message +=
+                `👤 ${person}\n` +
+                `📝 個人予定\n` +
+                `📌 備考：${note || "なし"}`;
 
             await interaction.reply(message);
             return;
         }
-
-        
 
         // -------------------------
         // 予定削除
