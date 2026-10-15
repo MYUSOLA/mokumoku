@@ -1412,9 +1412,17 @@ function showCalendar() {
                 openEventModal(group[selectedNumber - 1]);
             });
 
-            dayElement.appendChild(eventElement);
+                     dayElement.appendChild(eventElement);
         });
 
+        // その日の予定をカレンダーに追加
+        calendar.appendChild(dayElement);
+    }
+
+    // 月表示を更新
+    currentMonth.textContent =
+        `${year}年${month + 1}月`;
+}
 
 
 // =========================
