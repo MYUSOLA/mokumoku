@@ -31,8 +31,14 @@ const availabilityPeopleFilter =
 const peopleCheckboxes =
     document.querySelector(".people-checkboxes");
 
-const personFilter =
-    document.getElementById("personFilter");
+const personFilterDropdown =
+    document.getElementById("personFilterDropdown");
+
+const personFilterButton =
+    document.getElementById("personFilterButton");
+
+const personFilterMenu =
+    document.getElementById("personFilterMenu");
 
 const addPersonButton =
     document.getElementById("addPersonButton");
@@ -209,6 +215,14 @@ let people = JSON.parse(
     { id: "eve", name: "Eさん" }
 ];
 
+// =========================
+// 表示する人の選択状態
+// null = 全員
+// 配列 = 選択された人のID
+// =========================
+
+let selectedPersonIds = null;
+
 
 // =========================
 // 予定データ
@@ -344,52 +358,190 @@ function refreshCurrentView() {
 
 function updatePersonFilter() {
 
-    const currentValue =
-        personFilter.value;
+    // 削除済みの人物IDを除外
+    if (Array.isArray(selectedPersonIds)) {
 
-    personFilter.innerHTML = "";
+        selectedPersonIds =
+            selectedPersonIds.filter(id =>
+                people.some(person => person.id === id)
+            );
 
-    const allOption =
-        document.createElement("option");
+        // 全員が選択されていたら「全員」扱い
+        if (
+            people.length > 0 &&
+            selectedPersonIds.length === people.length
+        ) {
+            selectedPersonIds = null;
+        }
+    }
 
-    allOption.value = "all";
-    allOption.textContent = "全員";
+    personFilterMenu.innerHTML = "";
 
-    personFilter.appendChild(
-        allOption
-    );
+    // 全員チェックボックス
+    const allLabel = document.createElement("label");
+    allLabel.className = "person-filter-option";
 
-    people.forEach(person => {
+    const allCheckbox = document.createElement("input");
+    allCheckbox.type = "checkbox";
+    allCheckbox.checked = selectedPersonIds === null;
 
-        const option =
-            document.createElement("option");
+    const allText = document.createElement("span");
+    allText.textContent = "全員";
 
-        option.value =
-            person.id;
+    allLabel.appendChild(allCheckbox);
+    allLabel.appendChild(allText);
+    personFilterMenu.appendChild(allLabel);
 
-        option.textContent =
-            person.name;
+    allCheckbox.addEventListener("change", () => {
 
-        personFilter.appendChild(
-            option
-        );
+        selectedPersonIds =
+            allCheckbox.checked ? null : [];
+
+        updatePersonFilter();
+        refreshCurrentView();
     });
 
-    if (
-        people.some(
-            person =>
-                person.id === currentValue
-        )
-    ) {
+    // 個々の人物のチェックボックス
+    people.forEach(person => {
 
-        personFilter.value =
-            currentValue;
+        const label = document.createElement("label");
+        label.className = "person-filter-option";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = person.id;
+
+        checkbox.checked =
+            selectedPersonIds === null ||
+            selectedPersonIds.includes(person.id);
+
+        const name = document.createElement("span");
+        name.textContent = person.name;
+
+        label.appendChild(checkbox);
+        label.appendChild(name);
+        personFilterMenu.appendChild(label);
+
+        checkbox.addEventListener("change", () => {
+
+            if (selectedPersonIds === null) {
+
+                // 全員選択中から一人だけ外す
+                selectedPersonIds = people
+                    .filter(p => p.id !== person.id)
+                    .map(p => p.id);
+
+            } else if (checkbox.checked) {
+
+                if (!selectedPersonIds.includes(person.id)) {
+                    selectedPersonIds.push(person.id);
+                }
+
+            } else {
+
+                selectedPersonIds =
+                    selectedPersonIds.filter(
+                        id => id !== person.id
+                    );
+            }
+
+            // 全員が選ばれたら全員モードに戻す
+            if (
+                people.length > 0 &&
+                selectedPersonIds.length === people.length
+            ) {
+                selectedPersonIds = null;
+            }
+
+            updatePersonFilter();
+            refreshCurrentView();
+        });
+    });
+
+    // ボタンに選択状態を表示
+    if (selectedPersonIds === null) {
+
+        personFilterButton.textContent = "全員 ▼";
+
+    } else if (selectedPersonIds.length === 0) {
+
+        personFilterButton.textContent = "選択なし ▼";
+
+    } else if (selectedPersonIds.length <= 2) {
+
+        const names = selectedPersonIds.map(
+            id => getPersonName(id)
+        );
+
+        personFilterButton.textContent =
+            names.join("・") + " ▼";
 
     } else {
 
-        personFilter.value =
-            "all";
+        personFilterButton.textContent =
+            `${selectedPersonIds.length}人選択 ▼`;
     }
+}
+
+// =========================
+// 人物フィルターの開閉
+// =========================
+
+personFilterButton.addEventListener("click", () => {
+
+    const isOpen =
+        personFilterMenu.style.display !== "none";
+
+    personFilterMenu.style.display =
+        isOpen ? "none" : "block";
+
+    personFilterButton.setAttribute(
+        "aria-expanded",
+        String(!isOpen)
+    );
+});
+
+// プルダウンの外をクリックしたら閉じる
+document.addEventListener("click", event => {
+
+    if (
+        !personFilterDropdown.contains(event.target)
+    ) {
+
+        personFilterMenu.style.display = "none";
+
+        personFilterButton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+    }
+});
+
+// =========================
+// 選択された人物に予定が一致するか
+// =========================
+
+function matchesSelectedPeople(event) {
+
+    // 全員モードならすべて表示
+    if (selectedPersonIds === null) {
+        return true;
+    }
+
+    // 選択なしなら何も表示しない
+    if (selectedPersonIds.length === 0) {
+        return false;
+    }
+
+    const eventPeople =
+        Array.isArray(event.people)
+            ? event.people
+            : [];
+
+    // 選んだ人のうち一人でも参加していれば表示
+    return eventPeople.some(personId =>
+        selectedPersonIds.includes(personId)
+    );
 }
 
 
@@ -1256,30 +1408,17 @@ function showCalendar() {
             `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
 
-        const selectedPerson =
-            personFilter.value;
+       const todayEvents =
+    events.filter(event => {
 
+        const dateMatches =
+            event.date === dateString;
 
-        const todayEvents =
-            events.filter(
-                event => {
+        const personMatches =
+            matchesSelectedPeople(event);
 
-                    const dateMatches =
-                        event.date ===
-                        dateString;
-
-                    const personMatches =
-                        selectedPerson === "all" ||
-                        event.people.includes(
-                            selectedPerson
-                        );
-
-                    return (
-                        dateMatches &&
-                        personMatches
-                    );
-                }
-            );
+        return dateMatches && personMatches;
+    });
 
 
        
@@ -1473,18 +1612,6 @@ nextMonthButton.addEventListener(
 );
 
 
-// =========================
-// 人物フィルター
-// =========================
-
-personFilter.addEventListener(
-    "change",
-    () => {
-
-        refreshCurrentView();
-    }
-);
-
 
 // =========================
 // 一覧表示
@@ -1499,9 +1626,6 @@ function showList() {
 
     listView.innerHTML = "";
 
-
-    const selectedPerson =
-        personFilter.value;
 
 
     // 今表示している年月
@@ -1541,11 +1665,8 @@ function showList() {
 
 
                     // 人物が一致しているか
-                    const personMatches =
-                        selectedPerson === "all" ||
-                        event.people.includes(
-                            selectedPerson
-                        );
+const personMatches =
+    matchesSelectedPeople(event);
 
 
                     return (
