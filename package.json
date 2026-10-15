@@ -1,11 +1,9 @@
-
 {
   "name": "discord-bot",
   "version": "1.0.0",
   "description": "",
   "main": "bot.js",
   "scripts": {
-    "prestart": "node deploy-commands.js",
     "start": "node bot.js"
   },
   "keywords": [],
