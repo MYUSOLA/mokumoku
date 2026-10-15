@@ -1,6 +1,8 @@
+
 const { Client, GatewayIntentBits } = require("discord.js");
 const express = require("express");
 const cors = require("cors");
+const { registerCommands } = require("./deploy-commands");
 
 // =========================
 // Supabase設定
@@ -9,8 +11,7 @@ const cors = require("cors");
 const SUPABASE_URL = (process.env.SUPABASE_URL || "")
     .replace(/\/+$/, "");
 
-const SUPABASE_SECRET_KEY =
-    process.env.SUPABASE_SECRET_KEY;
+const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
     throw new Error(
@@ -23,8 +24,20 @@ if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
 // =========================
 
 let schedules = [];
+let lastGeneratedId = 0;
 
+// =========================
+// エラーログ
+// =========================
+
+function logError(context, error) {
+    console.error(`[${context}]`, error);
+}
+
+// =========================
 // Supabase REST API
+// =========================
+
 async function supabaseRequest(path, options = {}) {
     const headers = {
         apikey: SUPABASE_SECRET_KEY,
@@ -43,18 +56,15 @@ async function supabaseRequest(path, options = {}) {
     const text = await response.text();
 
     if (!response.ok) {
-        throw new Error(
-            `Supabase ${response.status}: ${text}`
-        );
+        throw new Error(`Supabase ${response.status}: ${text}`);
     }
 
     return text ? JSON.parse(text) : null;
 }
 
-
- // =========================
- // データベースから予定を読み込む
- // =========================
+// =========================
+// データベースから予定を読み込む
+// =========================
 
 async function loadSchedules() {
     const rows = await supabaseRequest(
@@ -68,13 +78,10 @@ async function loadSchedules() {
         time: row.time || "",
         timeType: row.timeType || "time",
         title: row.title || "",
-        person: Array.isArray(row.person)
-            ? row.person
-            : [],
+        person: Array.isArray(row.person) ? row.person : [],
         note: row.note || "",
         announcement: row.announcement !== false,
-        announcementMinutes:
-            Number(row.announcementMinutes ?? 30)
+        announcementMinutes: Number(row.announcementMinutes ?? 30)
     }));
 
     console.log(
@@ -101,8 +108,7 @@ async function insertSchedules(items) {
         {
             method: "POST",
             headers: {
-                Prefer:
-                    "resolution=merge-duplicates,return=representation"
+                Prefer: "resolution=merge-duplicates,return=representation"
             },
             body: JSON.stringify(normalizedItems)
         }
@@ -137,15 +143,15 @@ async function updateScheduleInDatabase(schedule) {
     return {
         ...rows[0],
         id: Number(rows[0].id),
-        person: Array.isArray(rows[0].person)
-            ? rows[0].person
-            : [],
+        person: Array.isArray(rows[0].person) ? rows[0].person : [],
         note: rows[0].note || ""
     };
 }
 
-
+// =========================
 // 予定を1件削除
+// =========================
+
 async function deleteScheduleFromDatabase(id) {
     const rows = await supabaseRequest(
         `schedules?id=eq.${encodeURIComponent(id)}&select=*`,
@@ -160,10 +166,10 @@ async function deleteScheduleFromDatabase(id) {
     return rows && rows.length > 0 ? rows[0] : null;
 }
 
-
-let lastGeneratedId = 0;
-
+// =========================
 // 一意なIDを作る
+// =========================
+
 function createNewId() {
     let id = Math.max(Date.now(), lastGeneratedId + 1);
 
@@ -174,14 +180,7 @@ function createNewId() {
     }
 
     lastGeneratedId = id;
-
     return id;
-}
-
-
-// データベース保存に失敗した場合のログ
-function logError(context, error) {
-    console.error(`[${context}]`, error);
 }
 
 // =========================
@@ -301,10 +300,9 @@ app.get("/schedules", (req, res) => {
     res.json(schedules);
 });
 
-
- // =========================
- // 予定追加
- // =========================
+// =========================
+// Webサイトから予定追加
+// =========================
 
 app.post("/schedules", async (req, res) => {
     try {
@@ -327,9 +325,7 @@ app.post("/schedules", async (req, res) => {
         const newSchedule = {
             id: createNewId(),
             date: String(body.date),
-            time: timeType === "time"
-                ? String(body.time || "")
-                : "",
+            time: timeType === "time" ? String(body.time || "") : "",
             timeType,
             title: String(body.title),
             person,
@@ -344,12 +340,14 @@ app.post("/schedules", async (req, res) => {
         const rows = await insertSchedules([newSchedule]);
         const saved = rows[0];
 
+        if (!saved) {
+            throw new Error("Supabaseから保存結果が返りませんでした。");
+        }
+
         schedules.push({
             ...saved,
             id: Number(saved.id),
-            person: Array.isArray(saved.person)
-                ? saved.person
-                : [],
+            person: Array.isArray(saved.person) ? saved.person : [],
             note: saved.note || ""
         });
 
@@ -366,11 +364,9 @@ app.post("/schedules", async (req, res) => {
     }
 });
 
-
-
- // =========================
- // 予定編集
- // =========================
+// =========================
+// Webサイトから予定編集
+// =========================
 
 app.put("/schedules/:id", async (req, res) => {
     try {
@@ -390,17 +386,14 @@ app.put("/schedules/:id", async (req, res) => {
         const current = schedules[index];
         const updated = { ...current };
 
-        // 日付
         if (body.date !== undefined) {
             updated.date = String(body.date);
         }
 
-        // 時間
         if (body.time !== undefined) {
             updated.time = String(body.time);
         }
 
-        // 時間の種類
         if (body.timeType !== undefined) {
             updated.timeType = body.timeType;
         }
@@ -409,29 +402,24 @@ app.put("/schedules/:id", async (req, res) => {
             updated.time = "";
         }
 
-        // 予定名
         if (body.title !== undefined) {
             updated.title = String(body.title);
         }
 
-        // 参加者
         if (Array.isArray(body.person)) {
             updated.person = body.person
                 .map(name => String(name).trim())
                 .filter(name => name !== "");
         }
 
-        // 備考
         if (body.note !== undefined) {
             updated.note = String(body.note || "");
         }
 
-        // 通知設定
         if (body.announcement !== undefined) {
             updated.announcement = body.announcement !== false;
         }
 
-        // 通知時間
         if (body.announcementMinutes !== undefined) {
             const minutes = Number(body.announcementMinutes);
 
@@ -440,10 +428,8 @@ app.put("/schedules/:id", async (req, res) => {
             }
         }
 
-        // IDは変更しない
         updated.id = current.id;
 
-        // データベースへ保存
         const saved = await updateScheduleInDatabase(updated);
 
         if (!saved) {
@@ -452,13 +438,10 @@ app.put("/schedules/:id", async (req, res) => {
             });
         }
 
-        // メモを含む保存結果を反映
         schedules[index] = {
             ...saved,
             id: Number(saved.id),
-            person: Array.isArray(saved.person)
-                ? saved.person
-                : [],
+            person: Array.isArray(saved.person) ? saved.person : [],
             note: saved.note || ""
         };
 
@@ -476,7 +459,7 @@ app.put("/schedules/:id", async (req, res) => {
 });
 
 // =========================
-// 予定削除
+// Webサイトから予定削除
 // =========================
 
 app.delete("/schedules/:id", async (req, res) => {
@@ -525,7 +508,19 @@ const client = new Client({
 });
 
 client.once("clientReady", () => {
-    console.log(`Bot起動成功！ ${client.user.tag}`);
+    console.log(`Discord Botログイン成功！ ${client.user.tag}`);
+});
+
+client.on("error", error => {
+    logError("Discordクライアント", error);
+});
+
+client.on("shardError", error => {
+    logError("Discord接続エラー", error);
+});
+
+client.on("warn", message => {
+    console.warn("[Discord警告]", message);
 });
 
 // =========================
@@ -536,11 +531,9 @@ client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     try {
-        
-        // Discordコマンドの返信を本人だけに表示する
         const originalReply = interaction.reply.bind(interaction);
 
-        interaction.reply = (options) => {
+        interaction.reply = options => {
             if (typeof options === "string") {
                 return originalReply({
                     content: options,
@@ -554,10 +547,6 @@ client.on("interactionCreate", async interaction => {
             });
         };
 
-
-        
-        
-        
         // -------------------------
         // 予定追加
         // -------------------------
@@ -614,12 +603,14 @@ client.on("interactionCreate", async interaction => {
             const rows = await insertSchedules([newSchedule]);
             const saved = rows[0];
 
+            if (!saved) {
+                throw new Error("Supabaseから保存結果が返りませんでした。");
+            }
+
             schedules.push({
                 ...saved,
                 id: Number(saved.id),
-                person: Array.isArray(saved.person)
-                    ? saved.person
-                    : [],
+                person: Array.isArray(saved.person) ? saved.person : [],
                 note: saved.note || ""
             });
 
@@ -705,16 +696,13 @@ client.on("interactionCreate", async interaction => {
                 announcementMinutes: 30
             }));
 
-            // 複数件をまとめて保存
             const rows = await insertSchedules(newSchedules);
 
             schedules.push(
                 ...rows.map(row => ({
                     ...row,
                     id: Number(row.id),
-                    person: Array.isArray(row.person)
-                        ? row.person
-                        : [],
+                    person: Array.isArray(row.person) ? row.person : [],
                     note: row.note || ""
                 }))
             );
@@ -798,7 +786,9 @@ client.on("interactionCreate", async interaction => {
                 item => Number(item.id) === Number(schedule.id)
             );
 
-            if (index !== -1) schedules.splice(index, 1);
+            if (index !== -1) {
+                schedules.splice(index, 1);
+            }
 
             await interaction.reply(
                 `予定を削除したよ！\n\n` +
@@ -903,7 +893,9 @@ client.on("interactionCreate", async interaction => {
                 item => Number(item.id) === Number(schedule.id)
             );
 
-            if (index !== -1) schedules[index] = saved;
+            if (index !== -1) {
+                schedules[index] = saved;
+            }
 
             const actionText = action === "add" ? "追加" : "削除";
 
@@ -939,24 +931,43 @@ client.on("interactionCreate", async interaction => {
 
 // =========================
 // 起動処理
-// データ読み込み完了後に起動
 // =========================
 
 async function start() {
+    // まず予定データを読み込む
     try {
         await loadSchedules();
-
-        const PORT = process.env.PORT || 3001;
-
-        app.listen(PORT, () => {
-            console.log(`予定表サーバー起動！ Port: ${PORT}`);
-        });
-
-        await client.login(process.env.DISCORD_TOKEN);
     } catch (error) {
-        logError("起動処理", error);
+        logError("予定データ読み込み", error);
         process.exit(1);
+        return;
     }
+
+    // Webサーバーを先に起動する
+    const PORT = process.env.PORT || 3001;
+
+    app.listen(PORT, () => {
+        console.log(`予定表サーバー起動！ Port: ${PORT}`);
+    });
+
+    // DiscordへのログインはWebサーバーとは独立して処理
+    const token = process.env.DISCORD_TOKEN;
+
+    if (!token) {
+        console.error(
+            "DISCORD_TOKEN が設定されていません。Discord Botはログインできません。"
+        );
+        return;
+    }
+
+    client.login(token).catch(error => {
+        logError("Discordログイン失敗", error);
+    });
+
+    // コマンド登録が失敗してもWebサーバーを停止させない
+    registerCommands().catch(error => {
+        logError("スラッシュコマンド登録失敗", error);
+    });
 }
 
 start();
