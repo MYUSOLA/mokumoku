@@ -2295,6 +2295,160 @@ editEventButton.addEventListener(
     }
 );
 
+
+ // =========================
+// 予定保存
+// =========================
+
+saveEventButton.addEventListener(
+    "click",
+    async () => {
+
+        const wasEditing =
+            isEditing &&
+            !!selectedEvent;
+
+        const date =
+            document.getElementById(
+                "eventDate"
+            ).value;
+
+        const time =
+            document.getElementById(
+                "eventTime"
+            ).value;
+
+        const title =
+            document.getElementById(
+                "eventTitle"
+            ).value.trim();
+
+        const timeType =
+            eventTimeType.value;
+
+        const checkedPeople =
+            document.querySelectorAll(
+                ".people-checkboxes input[type='checkbox']:checked"
+            );
+
+        const personIds =
+            Array.from(
+                checkedPeople
+            ).map(
+                checkbox => checkbox.value
+            );
+
+        // 入力チェック
+        if (
+            !date ||
+            !title ||
+            personIds.length === 0
+        ) {
+            alert(
+                "日付・予定名・参加者をすべて入力してください！"
+            );
+            return;
+        }
+
+        if (
+            timeType === "time" &&
+            !time
+        ) {
+            alert(
+                "時刻を指定する場合は時間を入力してください！"
+            );
+            return;
+        }
+
+        const personNames =
+            personIds.map(
+                personId =>
+                    getPersonName(personId)
+            );
+
+        // サーバーへ送るデータ
+        const requestBody = {
+            date: date,
+
+            time:
+                timeType === "time"
+                    ? time
+                    : "",
+
+            timeType: timeType,
+            title: title,
+            person: personNames,
+
+            // 備考欄の内容も保存
+            note: eventNote.value.trim()
+        };
+
+        try {
+
+            let response;
+
+            if (wasEditing) {
+
+                response = await fetch(
+                    `${API_BASE_URL}/schedules/${selectedEvent.id}`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(requestBody)
+                    }
+                );
+
+            } else {
+
+                response = await fetch(
+                    `${API_BASE_URL}/schedules`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(requestBody)
+                    }
+                );
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    `保存に失敗しました（HTTP ${response.status}）`
+                );
+            }
+
+            // 保存完了後、サーバーから再読み込み
+            await loadEventsFromServer();
+
+            addEventModal.classList.add("hidden");
+
+            isEditing = false;
+            selectedEvent = null;
+
+            alert(
+                wasEditing
+                    ? "予定を編集しました！"
+                    : "予定を保存しました！"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "予定の保存に失敗しました：",
+                error
+            );
+
+            alert(
+                "予定を保存できませんでした。コンソールのエラーを確認してください。"
+            );
+        }
+    }
+);
+
+
 // =========================
 // 予定削除
 // =========================
