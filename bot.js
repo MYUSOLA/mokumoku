@@ -929,45 +929,96 @@ client.on("interactionCreate", async interaction => {
     }
 });
 
-// =========================
-// 起動処理
-// =========================
+
+ // =========================
+ // 起動処理（診断ログ付き）
+ // =========================
+
+function withTimeout(promise, milliseconds, label) {
+    let timeoutId;
+
+    const timeoutPromise = new Promise((resolve, reject) => {
+        timeoutId = setTimeout(() => {
+            reject(
+                new Error(
+                    `${label}が${milliseconds / 1000}秒以内に完了しませんでした。`
+                )
+            );
+        }, milliseconds);
+    });
+
+    return Promise.race([
+        promise,
+        timeoutPromise
+    ]).finally(() => {
+        clearTimeout(timeoutId);
+    });
+}
 
 async function start() {
-    // まず予定データを読み込む
+    console.log("[起動] 起動処理を開始します。");
+
+    // 1. Supabaseから予定を読み込む
     try {
+        console.log("[起動] Supabaseから予定を読み込みます。");
         await loadSchedules();
+        console.log("[起動] 予定データの読み込みが完了しました。");
     } catch (error) {
         logError("予定データ読み込み", error);
         process.exit(1);
         return;
     }
 
-    // Webサーバーを先に起動する
+    // 2. Webサーバーを起動
     const PORT = process.env.PORT || 3001;
 
-    app.listen(PORT, () => {
-        console.log(`予定表サーバー起動！ Port: ${PORT}`);
+    const server = app.listen(PORT, () => {
+        console.log(`[Web] 予定表サーバー起動！ Port: ${PORT}`);
     });
 
-    // DiscordへのログインはWebサーバーとは独立して処理
+    server.on("error", error => {
+        logError("Webサーバー起動", error);
+    });
+
+    // 3. Discordトークンを確認
     const token = process.env.DISCORD_TOKEN;
 
-    if (!token) {
+    if (!token || !token.trim()) {
         console.error(
-            "DISCORD_TOKEN が設定されていません。Discord Botはログインできません。"
+            "[Discord] DISCORD_TOKEN が未設定です。"
         );
         return;
     }
 
-    client.login(token).catch(error => {
-        logError("Discordログイン失敗", error);
-    });
+    // 4. Discordログインを診断
+    console.log("[Discord] ログイン処理を開始します。");
 
-    // コマンド登録が失敗してもWebサーバーを停止させない
-    registerCommands().catch(error => {
-        logError("スラッシュコマンド登録失敗", error);
-    });
+    withTimeout(
+        client.login(token),
+        20000,
+        "Discordログイン"
+    )
+        .then(() => {
+            console.log("[Discord] ログイン処理が完了しました。");
+        })
+        .catch(error => {
+            logError("Discordログイン診断", error);
+        });
+
+    // 5. スラッシュコマンド登録を診断
+    console.log("[Commands] コマンド登録処理を開始します。");
+
+    withTimeout(
+        registerCommands(),
+        20000,
+        "スラッシュコマンド登録"
+    )
+        .then(() => {
+            console.log("[Commands] コマンド登録が完了しました。");
+        })
+        .catch(error => {
+            logError("スラッシュコマンド登録診断", error);
+        });
 }
 
 start();
