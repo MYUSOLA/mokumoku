@@ -1,7 +1,7 @@
+
 const { Client, GatewayIntentBits } = require("discord.js");
 const express = require("express");
 const cors = require("cors");
-const { registerCommands } = require("./deploy-commands");
 
 // =========================
 // Supabase設定
@@ -142,7 +142,9 @@ async function updateScheduleInDatabase(schedule) {
     return {
         ...rows[0],
         id: Number(rows[0].id),
-        person: Array.isArray(rows[0].person) ? rows[0].person : [],
+        person: Array.isArray(rows[0].person)
+            ? rows[0].person
+            : [],
         note: rows[0].note || ""
     };
 }
@@ -255,7 +257,12 @@ function parseTimeInput(input) {
         return null;
     }
 
-    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    if (
+        hour < 0 ||
+        hour > 23 ||
+        minute < 0 ||
+        minute > 59
+    ) {
         return null;
     }
 
@@ -279,6 +286,51 @@ function getDisplayTime(time, timeType) {
     if (timeType === "allday") return "📅 一日中";
 
     return time || "時間未指定";
+}
+
+// =========================
+// 予定をメモリ上でも更新
+// =========================
+
+function normalizeSchedule(schedule) {
+    return {
+        ...schedule,
+        id: Number(schedule.id),
+        date: String(schedule.date),
+        time: schedule.time || "",
+        timeType: schedule.timeType || "time",
+        title: schedule.title || "",
+        person: Array.isArray(schedule.person)
+            ? schedule.person
+            : [],
+        note: schedule.note || "",
+        announcement: schedule.announcement !== false,
+        announcementMinutes: Number(
+            schedule.announcementMinutes ?? 30
+        )
+    };
+}
+
+function replaceScheduleInMemory(schedule) {
+    const index = schedules.findIndex(
+        item => Number(item.id) === Number(schedule.id)
+    );
+
+    if (index === -1) {
+        schedules.push(normalizeSchedule(schedule));
+    } else {
+        schedules[index] = normalizeSchedule(schedule);
+    }
+}
+
+function removeScheduleFromMemory(id) {
+    const index = schedules.findIndex(
+        item => Number(item.id) === Number(id)
+    );
+
+    if (index !== -1) {
+        schedules.splice(index, 1);
+    }
 }
 
 // =========================
@@ -324,7 +376,9 @@ app.post("/schedules", async (req, res) => {
         const newSchedule = {
             id: createNewId(),
             date: String(body.date),
-            time: timeType === "time" ? String(body.time || "") : "",
+            time: timeType === "time"
+                ? String(body.time || "")
+                : "",
             timeType,
             title: String(body.title),
             person,
@@ -337,22 +391,19 @@ app.post("/schedules", async (req, res) => {
         };
 
         const rows = await insertSchedules([newSchedule]);
-        const saved = rows[0];
+        const saved = rows && rows[0];
 
         if (!saved) {
-            throw new Error("Supabaseから保存結果が返りませんでした。");
+            throw new Error(
+                "Supabaseから保存結果が返されませんでした。"
+            );
         }
 
-        schedules.push({
-            ...saved,
-            id: Number(saved.id),
-            person: Array.isArray(saved.person) ? saved.person : [],
-            note: saved.note || ""
-        });
+        replaceScheduleInMemory(saved);
 
         res.status(201).json({
             message: "予定を追加しました",
-            event: saved
+            event: normalizeSchedule(saved)
         });
     } catch (error) {
         logError("予定追加", error);
@@ -437,16 +488,11 @@ app.put("/schedules/:id", async (req, res) => {
             });
         }
 
-        schedules[index] = {
-            ...saved,
-            id: Number(saved.id),
-            person: Array.isArray(saved.person) ? saved.person : [],
-            note: saved.note || ""
-        };
+        replaceScheduleInMemory(saved);
 
         res.json({
             message: "予定を編集しました",
-            event: schedules[index]
+            event: normalizeSchedule(saved)
         });
     } catch (error) {
         logError("予定編集", error);
@@ -483,7 +529,7 @@ app.delete("/schedules/:id", async (req, res) => {
             });
         }
 
-        schedules.splice(index, 1);
+        removeScheduleFromMemory(id);
 
         res.json({
             message: "予定を削除しました",
@@ -507,7 +553,9 @@ const client = new Client({
 });
 
 client.once("clientReady", () => {
-    console.log(`Discord Botログイン成功！ ${client.user.tag}`);
+    console.log(
+        `[Discord] ログイン成功！ ${client.user.tag}`
+    );
 });
 
 client.on("error", error => {
@@ -530,6 +578,7 @@ client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     try {
+        // コマンドへの返信を非公開にする
         const originalReply = interaction.reply.bind(interaction);
 
         interaction.reply = options => {
@@ -551,11 +600,16 @@ client.on("interactionCreate", async interaction => {
         // -------------------------
 
         if (interaction.commandName === "add-schedule") {
-            const dateInput = interaction.options.getString("date");
-            const timeInput = interaction.options.getString("time");
-            const personInput = interaction.options.getString("person");
-            const title = interaction.options.getString("title");
-            const note = interaction.options.getString("note") || "";
+            const dateInput =
+                interaction.options.getString("date");
+            const timeInput =
+                interaction.options.getString("time");
+            const personInput =
+                interaction.options.getString("person");
+            const title =
+                interaction.options.getString("title");
+            const note =
+                interaction.options.getString("note") || "";
 
             const date = parseDateInput(dateInput);
 
@@ -600,18 +654,15 @@ client.on("interactionCreate", async interaction => {
             };
 
             const rows = await insertSchedules([newSchedule]);
-            const saved = rows[0];
+            const saved = rows && rows[0];
 
             if (!saved) {
-                throw new Error("Supabaseから保存結果が返りませんでした。");
+                throw new Error(
+                    "Supabaseから保存結果が返されませんでした。"
+                );
             }
 
-            schedules.push({
-                ...saved,
-                id: Number(saved.id),
-                person: Array.isArray(saved.person) ? saved.person : [],
-                note: saved.note || ""
-            });
+            replaceScheduleInMemory(saved);
 
             await interaction.reply(
                 `予定を保存したよ！\n\n` +
@@ -629,11 +680,17 @@ client.on("interactionCreate", async interaction => {
         // 個人予定をまとめて追加
         // -------------------------
 
-        if (interaction.commandName === "add-personal-schedule") {
-            const dateInput = interaction.options.getString("date");
-            const timeInput = interaction.options.getString("time");
-            const personInput = interaction.options.getString("person");
-            const note = interaction.options.getString("note") || "";
+        if (
+            interaction.commandName === "add-personal-schedule"
+        ) {
+            const dateInput =
+                interaction.options.getString("date");
+            const timeInput =
+                interaction.options.getString("time");
+            const personInput =
+                interaction.options.getString("person");
+            const note =
+                interaction.options.getString("note") || "";
 
             const dateInputs = dateInput
                 .trim()
@@ -658,7 +715,11 @@ client.on("interactionCreate", async interaction => {
 
             const firstMonth = dates[0].substring(0, 7);
 
-            if (!dates.every(date => date.substring(0, 7) === firstMonth)) {
+            if (
+                !dates.every(
+                    date => date.substring(0, 7) === firstMonth
+                )
+            ) {
                 await interaction.reply(
                     "個人予定は同じ月の日付をまとめて入力してね。"
                 );
@@ -697,16 +758,18 @@ client.on("interactionCreate", async interaction => {
 
             const rows = await insertSchedules(newSchedules);
 
+            if (!rows || rows.length !== newSchedules.length) {
+                throw new Error(
+                    "個人予定の保存件数が一致しません。"
+                );
+            }
+
             schedules.push(
-                ...rows.map(row => ({
-                    ...row,
-                    id: Number(row.id),
-                    person: Array.isArray(row.person) ? row.person : [],
-                    note: row.note || ""
-                }))
+                ...rows.map(normalizeSchedule)
             );
 
-            let message = "📅 個人予定をまとめて登録したよ！\n\n";
+            let message =
+                "📅 個人予定をまとめて登録したよ！\n\n";
 
             rows.forEach(schedule => {
                 message +=
@@ -728,9 +791,12 @@ client.on("interactionCreate", async interaction => {
         // -------------------------
 
         if (interaction.commandName === "delete-schedule") {
-            const dateInput = interaction.options.getString("date");
-            const timeInput = interaction.options.getString("time");
-            const title = interaction.options.getString("title");
+            const dateInput =
+                interaction.options.getString("date");
+            const timeInput =
+                interaction.options.getString("time");
+            const title =
+                interaction.options.getString("title");
 
             const date = parseDateInput(dateInput);
 
@@ -772,7 +838,9 @@ client.on("interactionCreate", async interaction => {
             }
 
             const schedule = matchedSchedules[0];
-            const deleted = await deleteScheduleFromDatabase(schedule.id);
+
+            const deleted =
+                await deleteScheduleFromDatabase(schedule.id);
 
             if (!deleted) {
                 await interaction.reply(
@@ -781,13 +849,7 @@ client.on("interactionCreate", async interaction => {
                 return;
             }
 
-            const index = schedules.findIndex(
-                item => Number(item.id) === Number(schedule.id)
-            );
-
-            if (index !== -1) {
-                schedules.splice(index, 1);
-            }
+            removeScheduleFromMemory(schedule.id);
 
             await interaction.reply(
                 `予定を削除したよ！\n\n` +
@@ -805,11 +867,16 @@ client.on("interactionCreate", async interaction => {
         // -------------------------
 
         if (interaction.commandName === "edit-person") {
-            const dateInput = interaction.options.getString("date");
-            const timeInput = interaction.options.getString("time");
-            const title = interaction.options.getString("title");
-            const action = interaction.options.getString("action");
-            const personInput = interaction.options.getString("person");
+            const dateInput =
+                interaction.options.getString("date");
+            const timeInput =
+                interaction.options.getString("time");
+            const title =
+                interaction.options.getString("title");
+            const action =
+                interaction.options.getString("action");
+            const personInput =
+                interaction.options.getString("person");
 
             const date = parseDateInput(dateInput);
 
@@ -875,11 +942,14 @@ client.on("interactionCreate", async interaction => {
                     existingPerson => !people.includes(existingPerson)
                 );
             } else {
-                await interaction.reply("追加または削除を選んでね。");
+                await interaction.reply(
+                    "追加または削除を選んでね。"
+                );
                 return;
             }
 
-            const saved = await updateScheduleInDatabase(updated);
+            const saved =
+                await updateScheduleInDatabase(updated);
 
             if (!saved) {
                 await interaction.reply(
@@ -888,15 +958,10 @@ client.on("interactionCreate", async interaction => {
                 return;
             }
 
-            const index = schedules.findIndex(
-                item => Number(item.id) === Number(schedule.id)
-            );
+            replaceScheduleInMemory(saved);
 
-            if (index !== -1) {
-                schedules[index] = saved;
-            }
-
-            const actionText = action === "add" ? "追加" : "削除";
+            const actionText =
+                action === "add" ? "追加" : "削除";
 
             await interaction.reply(
                 `予定の参加者を${actionText}したよ！\n\n` +
@@ -929,89 +994,6 @@ client.on("interactionCreate", async interaction => {
 });
 
 // =========================
-// タイムアウト付き処理
-// =========================
-
-function withTimeout(promise, milliseconds, label) {
-    let timeoutId;
-
-    const timeoutPromise = new Promise((resolve, reject) => {
-        timeoutId = setTimeout(() => {
-            reject(
-                new Error(
-                    `${label}が${milliseconds / 1000}秒以内に完了しませんでした。`
-                )
-            );
-        }, milliseconds);
-    });
-
-    return Promise.race([
-        promise,
-        timeoutPromise
-    ]).finally(() => {
-        clearTimeout(timeoutId);
-    });
-}
-
-// =========================
-// Discord REST API通信テスト
-// =========================
-
-async function testDiscordApi(token) {
-    console.log("[通信テスト] Discord APIへの接続を確認します。");
-
-    try {
-        const response = await fetch(
-            "https://discord.com/api/v10/users/@me",
-            {
-                headers: {
-                    Authorization: `Bot ${token}`
-                },
-                signal: AbortSignal.timeout(10000)
-            }
-        );
-
-        console.log(
-            `[通信テスト] HTTPステータス: ${response.status}`
-        );
-
-        console.log(
-            "[通信テスト] Retry-After:",
-            response.headers.get("retry-after") || "なし"
-        );
-
-        console.log(
-            "[通信テスト] RateLimit-Scope:",
-            response.headers.get("x-ratelimit-scope") || "なし"
-        );
-
-        console.log(
-            "[通信テスト] RateLimit-Global:",
-            response.headers.get("x-ratelimit-global") || "なし"
-        );
-
-        const body = await response.text();
-
-        // トークンそのものはログに出さない
-        console.log("[通信テスト] Discord応答本文:", body);
-
-        if (response.ok) {
-            console.log("[通信テスト] API通信成功！");
-        } else {
-            console.error(
-                "[通信テスト] API通信に失敗しました。"
-            );
-        }
-    } catch (error) {
-        console.error(
-            "[通信テスト] 通信エラー:",
-            error.name,
-            error.message
-        );
-    }
-}
-
-// =========================
 // 起動
 // =========================
 
@@ -1020,14 +1002,18 @@ async function start() {
 
     // 1. Supabaseから予定を読み込む
     try {
-        console.log("[起動] Supabaseから予定を読み込みます。");
+        console.log(
+            "[起動] Supabaseから予定を読み込みます。"
+        );
 
         await loadSchedules();
 
-        console.log("[起動] 予定データの読み込みが完了しました。");
+        console.log(
+            "[起動] 予定データの読み込みが完了しました。"
+        );
     } catch (error) {
         logError("予定データ読み込み", error);
-        process.exit(1);
+        process.exitCode = 1;
         return;
     }
 
@@ -1035,58 +1021,53 @@ async function start() {
     const PORT = process.env.PORT || 3001;
 
     const server = app.listen(PORT, () => {
-        console.log(`[Web] 予定表サーバー起動！ Port: ${PORT}`);
+        console.log(
+            `[Web] 予定表サーバー起動！ Port: ${PORT}`
+        );
     });
 
     server.on("error", error => {
-        logError("Webサーバー起動", error);
+        logError("Webサーバー", error);
     });
 
-    // 3. Discordトークンを確認
+    // 3. Discord Botにログイン
+    // コマンド登録や独自の診断リクエストは行わない
     const token = process.env.DISCORD_TOKEN;
 
     if (!token || !token.trim()) {
         console.error(
             "[Discord] DISCORD_TOKEN が未設定です。"
         );
+
+        console.log(
+            "[Web] Webサーバーは引き続き起動しています。"
+        );
+
         return;
     }
 
-    // 4. Discord APIへの診断リクエスト
-    // 429が出た場合は、応答本文と待機時間を確認する
-    await testDiscordApi(token);
-
-    // 5. Discordログイン
     console.log("[Discord] ログイン処理を開始します。");
 
-    const loginPromise = client.login(token);
+    try {
+        await client.login(token);
 
-    withTimeout(
-        loginPromise,
-        20000,
-        "Discordログイン"
-    )
-        .then(() => {
-            console.log("[Discord] ログイン処理が完了しました。");
-        })
-        .catch(error => {
-            logError("Discordログイン診断", error);
-        });
+        console.log(
+            "[Discord] ログイン処理が完了しました。"
+        );
+    } catch (error) {
+        logError("Discordログイン", error);
 
-    // 6. スラッシュコマンド登録
-    console.log("[Commands] コマンド登録処理を開始します。");
+        console.error(
+            "[Discord] ログインに失敗しました。"
+        );
 
-    withTimeout(
-        registerCommands(),
-        20000,
-        "スラッシュコマンド登録"
-    )
-        .then(() => {
-            console.log("[Commands] コマンド登録が完了しました。");
-        })
-        .catch(error => {
-            logError("スラッシュコマンド登録診断", error);
-        });
+        console.log(
+            "[Web] Webサーバーは引き続き起動しています。"
+        );
+    }
 }
 
-start();
+start().catch(error => {
+    logError("起動処理", error);
+    process.exitCode = 1;
+});
