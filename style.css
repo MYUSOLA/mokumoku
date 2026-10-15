@@ -392,3 +392,48 @@ main {
     overscroll-behavior: contain;
     padding-right: 6px;
 }
+
+
+/* 予定追加・編集画面：枠の高さを固定して中身をスクロール */
+#addEventModal {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+#addEventModal .modal-content {
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    max-width: 500px;
+
+    max-height: calc(100vh - 40px);
+    max-height: calc(100dvh - 40px);
+
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+/* 備考欄 */
+#addEventModal #eventNote {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: 90px;
+    resize: vertical;
+
+    margin-top: 5px;
+    margin-bottom: 15px;
+    padding: 8px;
+
+    border: 1px solid #ccc;
+    border-radius: 5px;
+
+    font-family: sans-serif;
+    font-size: 15px;
+}
+
+/* 入力欄が狭い画面でもはみ出さないようにする */
+#addEventModal .people-checkboxes {
+    flex-shrink: 0;
+}
