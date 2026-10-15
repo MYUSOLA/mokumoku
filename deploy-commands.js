@@ -1,3 +1,4 @@
+
 const { REST, Routes, SlashCommandBuilder } = require("discord.js");
 
 const commands = [
@@ -36,6 +37,13 @@ const commands = [
                 .setName("title")
                 .setDescription("予定の内容")
                 .setRequired(true)
+        )
+
+        .addStringOption(option =>
+            option
+                .setName("note")
+                .setDescription("備考（任意）")
+                .setRequired(false)
         )
 
         .toJSON(),
@@ -155,6 +163,13 @@ const commands = [
                 .setRequired(true)
         )
 
+        .addStringOption(option =>
+            option
+                .setName("note")
+                .setDescription("備考（任意・入力した内容は各日に共通）")
+                .setRequired(false)
+        )
+
         .toJSON()
 
 ];
@@ -201,4 +216,3 @@ const CLIENT_ID =
     }
 
 })();
-```
