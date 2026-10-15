@@ -1282,7 +1282,7 @@ function showCalendar() {
             );
 
 
-       ```js
+       
         // =========================
         // 個人予定と通常予定を分ける
         // =========================
@@ -1414,7 +1414,7 @@ function showCalendar() {
 
             dayElement.appendChild(eventElement);
         });
-```
+
 
 
 // =========================
