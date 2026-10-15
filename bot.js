@@ -929,10 +929,9 @@ client.on("interactionCreate", async interaction => {
     }
 });
 
-
- // =========================
- // 起動処理（診断ログ付き）
- // =========================
+// =========================
+// 起動処理・診断
+// =========================
 
 function withTimeout(promise, milliseconds, label) {
     let timeoutId;
@@ -955,13 +954,61 @@ function withTimeout(promise, milliseconds, label) {
     });
 }
 
+// =========================
+// Discord REST API通信テスト
+// =========================
+
+async function testDiscordApi(token) {
+    console.log("[通信テスト] Discord APIへの接続を確認します。");
+
+    try {
+        const response = await fetch(
+            "https://discord.com/api/v10/users/@me",
+            {
+                headers: {
+                    Authorization: `Bot ${token}`
+                },
+                signal: AbortSignal.timeout(10000)
+            }
+        );
+
+        console.log(
+            `[通信テスト] Discord API応答: HTTP ${response.status}`
+        );
+
+        if (response.ok) {
+            console.log(
+                "[通信テスト] BotトークンでのAPI通信に成功しました。"
+            );
+        } else {
+            console.error(
+                "[通信テスト] Discord APIがエラー応答を返しました。"
+            );
+        }
+
+        await response.body?.cancel().catch(() => {});
+    } catch (error) {
+        console.error(
+            "[通信テスト] Discord API通信失敗:",
+            error.name,
+            error.message
+        );
+    }
+}
+
+// =========================
+// 起動
+// =========================
+
 async function start() {
     console.log("[起動] 起動処理を開始します。");
 
     // 1. Supabaseから予定を読み込む
     try {
         console.log("[起動] Supabaseから予定を読み込みます。");
+
         await loadSchedules();
+
         console.log("[起動] 予定データの読み込みが完了しました。");
     } catch (error) {
         logError("予定データ読み込み", error);
@@ -990,7 +1037,10 @@ async function start() {
         return;
     }
 
-    // 4. Discordログインを診断
+    // 4. Discord REST APIへの通信テスト
+    await testDiscordApi(token);
+
+    // 5. Discordログインを診断
     console.log("[Discord] ログイン処理を開始します。");
 
     withTimeout(
@@ -1005,7 +1055,7 @@ async function start() {
             logError("Discordログイン診断", error);
         });
 
-    // 5. スラッシュコマンド登録を診断
+    // 6. スラッシュコマンド登録を診断
     console.log("[Commands] コマンド登録処理を開始します。");
 
     withTimeout(
