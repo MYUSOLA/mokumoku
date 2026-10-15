@@ -51,7 +51,11 @@ async function supabaseRequest(path, options = {}) {
     return text ? JSON.parse(text) : null;
 }
 
-// データベースから予定を読み込む
+
+ // =========================
+ // データベースから予定を読み込む
+ // =========================
+
 async function loadSchedules() {
     const rows = await supabaseRequest(
         "schedules?select=*&order=date.asc"
@@ -67,6 +71,7 @@ async function loadSchedules() {
         person: Array.isArray(row.person)
             ? row.person
             : [],
+        note: row.note || "",
         announcement: row.announcement !== false,
         announcementMinutes:
             Number(row.announcementMinutes ?? 30)
@@ -77,9 +82,19 @@ async function loadSchedules() {
     );
 }
 
+// =========================
 // 予定を新規保存
+// =========================
+
 async function insertSchedules(items) {
-    if (items.length === 0) return [];
+    if (items.length === 0) {
+        return [];
+    }
+
+    const normalizedItems = items.map(item => ({
+        ...item,
+        note: item.note || ""
+    }));
 
     return await supabaseRequest(
         "schedules?on_conflict=id",
@@ -89,13 +104,21 @@ async function insertSchedules(items) {
                 Prefer:
                     "resolution=merge-duplicates,return=representation"
             },
-            body: JSON.stringify(items)
+            body: JSON.stringify(normalizedItems)
         }
     );
 }
 
+// =========================
 // 予定を1件更新
+// =========================
+
 async function updateScheduleInDatabase(schedule) {
+    const normalizedSchedule = {
+        ...schedule,
+        note: schedule.note || ""
+    };
+
     const rows = await supabaseRequest(
         `schedules?id=eq.${encodeURIComponent(schedule.id)}&select=*`,
         {
@@ -103,7 +126,7 @@ async function updateScheduleInDatabase(schedule) {
             headers: {
                 Prefer: "return=representation"
             },
-            body: JSON.stringify(schedule)
+            body: JSON.stringify(normalizedSchedule)
         }
     );
 
@@ -116,9 +139,11 @@ async function updateScheduleInDatabase(schedule) {
         id: Number(rows[0].id),
         person: Array.isArray(rows[0].person)
             ? rows[0].person
-            : []
+            : [],
+        note: rows[0].note || ""
     };
 }
+
 
 // 予定を1件削除
 async function deleteScheduleFromDatabase(id) {
@@ -276,9 +301,10 @@ app.get("/schedules", (req, res) => {
     res.json(schedules);
 });
 
-// =========================
-// 予定追加
-// =========================
+
+ // =========================
+ // 予定追加
+ // =========================
 
 app.post("/schedules", async (req, res) => {
     try {
@@ -307,6 +333,7 @@ app.post("/schedules", async (req, res) => {
             timeType,
             title: String(body.title),
             person,
+            note: String(body.note || ""),
             announcement: body.announcement !== false,
             announcementMinutes:
                 Number.isFinite(Number(body.announcementMinutes))
@@ -320,7 +347,10 @@ app.post("/schedules", async (req, res) => {
         schedules.push({
             ...saved,
             id: Number(saved.id),
-            person: Array.isArray(saved.person) ? saved.person : []
+            person: Array.isArray(saved.person)
+                ? saved.person
+                : [],
+            note: saved.note || ""
         });
 
         res.status(201).json({
@@ -336,9 +366,11 @@ app.post("/schedules", async (req, res) => {
     }
 });
 
-// =========================
-// 予定編集
-// =========================
+
+
+ // =========================
+ // 予定編集
+ // =========================
 
 app.put("/schedules/:id", async (req, res) => {
     try {
@@ -358,14 +390,17 @@ app.put("/schedules/:id", async (req, res) => {
         const current = schedules[index];
         const updated = { ...current };
 
+        // 日付
         if (body.date !== undefined) {
             updated.date = String(body.date);
         }
 
+        // 時間
         if (body.time !== undefined) {
             updated.time = String(body.time);
         }
 
+        // 時間の種類
         if (body.timeType !== undefined) {
             updated.timeType = body.timeType;
         }
@@ -374,20 +409,29 @@ app.put("/schedules/:id", async (req, res) => {
             updated.time = "";
         }
 
+        // 予定名
         if (body.title !== undefined) {
             updated.title = String(body.title);
         }
 
+        // 参加者
         if (Array.isArray(body.person)) {
             updated.person = body.person
                 .map(name => String(name).trim())
                 .filter(name => name !== "");
         }
 
+        // 備考
+        if (body.note !== undefined) {
+            updated.note = String(body.note || "");
+        }
+
+        // 通知設定
         if (body.announcement !== undefined) {
             updated.announcement = body.announcement !== false;
         }
 
+        // 通知時間
         if (body.announcementMinutes !== undefined) {
             const minutes = Number(body.announcementMinutes);
 
@@ -396,8 +440,10 @@ app.put("/schedules/:id", async (req, res) => {
             }
         }
 
+        // IDは変更しない
         updated.id = current.id;
 
+        // データベースへ保存
         const saved = await updateScheduleInDatabase(updated);
 
         if (!saved) {
@@ -406,11 +452,19 @@ app.put("/schedules/:id", async (req, res) => {
             });
         }
 
-        schedules[index] = saved;
+        // メモを含む保存結果を反映
+        schedules[index] = {
+            ...saved,
+            id: Number(saved.id),
+            person: Array.isArray(saved.person)
+                ? saved.person
+                : [],
+            note: saved.note || ""
+        };
 
         res.json({
             message: "予定を編集しました",
-            event: saved
+            event: schedules[index]
         });
     } catch (error) {
         logError("予定編集", error);
@@ -502,6 +556,7 @@ client.on("interactionCreate", async interaction => {
 
 
         
+        
         // -------------------------
         // 予定追加
         // -------------------------
@@ -536,7 +591,9 @@ client.on("interactionCreate", async interaction => {
                 .filter(name => name !== "");
 
             if (people.length === 0) {
-                await interaction.reply("参加者を1人以上入力してね。");
+                await interaction.reply(
+                    "参加者を1人以上入力してね。"
+                );
                 return;
             }
 
@@ -547,6 +604,7 @@ client.on("interactionCreate", async interaction => {
                 timeType: parsedTime.timeType,
                 title,
                 person: people,
+                note: "",
                 announcement: true,
                 announcementMinutes: 30
             };
@@ -557,7 +615,10 @@ client.on("interactionCreate", async interaction => {
             schedules.push({
                 ...saved,
                 id: Number(saved.id),
-                person: Array.isArray(saved.person) ? saved.person : []
+                person: Array.isArray(saved.person)
+                    ? saved.person
+                    : [],
+                note: saved.note || ""
             });
 
             await interaction.reply(
@@ -586,7 +647,9 @@ client.on("interactionCreate", async interaction => {
                 .filter(value => value !== "");
 
             if (dateInputs.length === 0) {
-                await interaction.reply("日付を1つ以上入力してね。");
+                await interaction.reply(
+                    "日付を1つ以上入力してね。"
+                );
                 return;
             }
 
@@ -633,6 +696,7 @@ client.on("interactionCreate", async interaction => {
                 timeType: parsedTime.timeType,
                 title: "個人予定",
                 person: [person],
+                note: "",
                 announcement: true,
                 announcementMinutes: 30
             }));
