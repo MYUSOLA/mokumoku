@@ -2218,7 +2218,7 @@ closeAddEventModal.addEventListener(
 
 
 
- // =========================
+// =========================
 // 編集ボタン
 // =========================
 
@@ -2268,10 +2268,11 @@ editEventButton.addEventListener(
         ).value =
             selectedEvent.title;
 
-        // 備考欄に保存済みの内容を表示
+        // 保存済みの備考を表示
         eventNote.value =
             selectedEvent.note || "";
 
+        // 参加者のチェック状態を復元
         const checkboxes =
             document.querySelectorAll(
                 ".people-checkboxes input[type='checkbox']"
@@ -2287,37 +2288,12 @@ editEventButton.addEventListener(
             }
         );
 
+        // 編集画面を表示
         addEventModal.classList.remove(
             "hidden"
         );
     }
 );
-
-
-
-const requestBody = {
-
-    date:
-        date,
-
-    time:
-        timeType === "time"
-            ? time
-            : "",
-
-    timeType:
-        timeType,
-
-    title:
-        title,
-
-    person:
-        personNames,
-
-    // 備考
-    note:
-        eventNote.value.trim()
-};
 
 // =========================
 // 予定削除
