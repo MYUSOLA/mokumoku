@@ -1282,170 +1282,139 @@ function showCalendar() {
             );
 
 
+       ```js
         // =========================
-        // 個人予定をまとめる
+        // 個人予定と通常予定を分ける
         // =========================
 
         const personalEvents = [];
         const normalEvents = [];
 
-        todayEvents.forEach(
-            event => {
-
-                if (
-                    event.title ===
-                    "個人予定"
-                ) {
-
-                    personalEvents.push(
-                        event
-                    );
-
-                } else {
-
-                    normalEvents.push(
-                        event
-                    );
-                }
+        todayEvents.forEach(event => {
+            if (event.title === "個人予定") {
+                personalEvents.push(event);
+            } else {
+                normalEvents.push(event);
             }
-        );
+        });
 
 
         // =========================
         // 通常予定を表示
         // =========================
 
-        normalEvents.forEach(
-            event => {
+        normalEvents.forEach(event => {
+            const eventElement =
+                document.createElement("div");
 
-                const eventElement =
-                    document.createElement("div");
+            eventElement.className = "event";
 
-                eventElement.className =
-                    "event";
+            eventElement.textContent =
+                `${getDisplayTime(event)} ${event.title}`;
 
-                eventElement.textContent =
-                    `${getDisplayTime(event)} ${event.title}`;
+            eventElement.addEventListener("click", () => {
+                openEventModal(event);
+            });
 
-                eventElement.addEventListener(
-                    "click",
-                    () => {
-
-                        openEventModal(
-                            event
-                        );
-                    }
-                );
-
-                dayElement.appendChild(
-                    eventElement
-                );
-            }
-        );
+            dayElement.appendChild(eventElement);
+        });
 
 
         // =========================
-        // 個人予定を
-        // 同じ時間ごとにまとめる
+        // 個人予定を同じ時間ごとにまとめる
         // =========================
 
         const personalGroups = {};
 
-        personalEvents.forEach(
-            event => {
+        personalEvents.forEach(event => {
+            const groupKey =
+                `${event.timeType || "time"}_${event.time || ""}`;
 
-                const groupKey =
-                    `${event.timeType || "time"}_${event.time || ""}`;
+            if (!personalGroups[groupKey]) {
+                personalGroups[groupKey] = [];
+            }
 
-                if (
-                    !personalGroups[groupKey]
-                ) {
+            personalGroups[groupKey].push(event);
+        });
 
-                    personalGroups[groupKey] = [];
+
+        // =========================
+        // まとめた個人予定を表示
+        // =========================
+
+        Object.values(personalGroups).forEach(group => {
+            const eventElement =
+                document.createElement("div");
+
+            eventElement.className =
+                "event personal-schedule-event";
+
+            // 表示する人の名前をまとめる
+            const personNames = [];
+
+            group.forEach(event => {
+                event.people.forEach(personId => {
+                    const personName =
+                        getPersonName(personId);
+
+                    if (!personNames.includes(personName)) {
+                        personNames.push(personName);
+                    }
+                });
+            });
+
+            eventElement.textContent =
+                `${getDisplayTime(group[0])} 個人予定 ${personNames.join("・")}`;
+
+            // クリックしたら削除・詳細表示する人を選ぶ
+            eventElement.addEventListener("click", () => {
+
+                // 1件だけなら、その予定を直接開く
+                if (group.length === 1) {
+                    openEventModal(group[0]);
+                    return;
                 }
 
-                personalGroups[groupKey].push(
-                    event
-                );
-            }
-        );
+                // 複数人なら、選択肢を作る
+                const choices = group.map((event, index) => {
+                    const names = event.people
+                        .map(personId => getPersonName(personId))
+                        .join("・");
 
+                    return `${index + 1}: ${names}`;
+                });
 
-        Object.values(
-            personalGroups
-        ).forEach(
-            group => {
-
-                const eventElement =
-                    document.createElement("div");
-
-                eventElement.className =
-                    "event personal-schedule-event";
-
-
-                // 人をまとめる
-                const personNames = [];
-
-                group.forEach(
-                    event => {
-
-                        event.people.forEach(
-                            personId => {
-
-                                const personName =
-                                    getPersonName(
-                                        personId
-                                    );
-
-                                if (
-                                    !personNames.includes(
-                                        personName
-                                    )
-                                ) {
-
-                                    personNames.push(
-                                        personName
-                                    );
-                                }
-                            }
-                        );
-                    }
+                const answer = prompt(
+                    "詳細を表示・削除したい個人予定を選んでね。\n\n" +
+                    choices.join("\n") +
+                    "\n\n番号を入力してください。"
                 );
 
+                // キャンセルされた場合
+                if (answer === null) {
+                    return;
+                }
 
-                eventElement.textContent =
-                    `${getDisplayTime(group[0])} 個人予定 ${personNames.join("・")}`;
+                const selectedNumber = Number(answer);
 
+                // 入力された番号を確認
+                if (
+                    !Number.isInteger(selectedNumber) ||
+                    selectedNumber < 1 ||
+                    selectedNumber > group.length
+                ) {
+                    alert("一覧にある番号を入力してね。");
+                    return;
+                }
 
-                // クリックしたときは
-                // その個人予定の一覧を開く
-                eventElement.addEventListener(
-                    "click",
-                    () => {
+                // 選んだ1件だけ詳細画面を開く
+                // 削除ボタンも、この予定1件だけを対象にする
+                openEventModal(group[selectedNumber - 1]);
+            });
 
-                        openEventModal(
-                            group[0]
-                        );
-                    }
-                );
-
-
-                dayElement.appendChild(
-                    eventElement
-                );
-            }
-        );
-
-
-        calendar.appendChild(
-            dayElement
-        );
-    }
-
-
-    currentMonth.textContent =
-        `${year}年${month + 1}月`;
-}
+            dayElement.appendChild(eventElement);
+        });
+```
 
 
 // =========================
