@@ -2424,7 +2424,51 @@ closeAddEventModal.addEventListener(
     }
 );
 
+// =========================
+// 新規公演追加
+// =========================
 
+addPerformanceButton.addEventListener(
+    "click",
+    () => {
+
+        // 公演登録画面を初期状態にする
+        performanceModalTitle.textContent =
+            "公演を追加";
+
+        performanceDate.value = "";
+
+        performanceType.value =
+            "normal";
+
+        performanceTimeType.value =
+            "time";
+
+        performanceTime.value = "";
+
+        performanceTimeLabel.style.display =
+            "block";
+
+        performanceNote.value = "";
+
+        // 参加者のチェックをすべて外す
+        const checkboxes =
+            performancePeopleCheckboxes.querySelectorAll(
+                "input[type='checkbox']"
+            );
+
+        checkboxes.forEach(
+            checkbox => {
+                checkbox.checked = false;
+            }
+        );
+
+        // 作品一覧を読み込む処理は次の手順で追加する
+        performanceModal.classList.remove(
+            "hidden"
+        );
+    }
+);
 
 // =========================
 // 編集ボタン
