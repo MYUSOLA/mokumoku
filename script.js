@@ -702,55 +702,20 @@ function updatePersonalScheduleDates() {
 }
 
 
-// =========================
-// サーバー側の人を
-// カレンダー側へ取り込む
+
+ // =========================
+// 予定読み込み後の人物表示更新
+// 人物一覧は /members で管理する
 // =========================
 
 function syncPeopleFromServer(serverSchedules) {
 
-    serverSchedules.forEach(
-        schedule => {
-
-            const personNames =
-                Array.isArray(schedule.person)
-                    ? schedule.person
-                    : [];
-
-            personNames.forEach(
-                personName => {
-
-                    const exists =
-                        people.some(
-                            person =>
-                                person.name ===
-                                personName
-                        );
-
-                    if (!exists) {
-
-                        people.push({
-                            id:
-                                "person_" +
-                                Date.now() +
-                                "_" +
-                                Math.random()
-                                    .toString(36)
-                                    .substring(2, 8),
-
-                            name:
-                                personName
-                        });
-                    }
-                }
-            );
-        }
-    );
-
-    savePeople();
+    // 予定データから人物を追加・保存しない。
+    // 共有メンバー一覧は、別途 /members から取得する。
 
     updatePersonFilter();
     updatePeopleCheckboxes();
+    updatePersonalSchedulePeople();
 }
 
 
