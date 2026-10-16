@@ -174,6 +174,9 @@ const performanceWorksModal =
 const closePerformanceWorksModal =
     document.getElementById("closePerformanceWorksModal");
 
+const openPerformanceWorksButton =
+    document.getElementById("openPerformanceWorksButton");
+
 const newPerformanceWorkName =
     document.getElementById("newPerformanceWorkName");
 
