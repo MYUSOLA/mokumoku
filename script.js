@@ -2684,7 +2684,8 @@ closeAddEventModal.addEventListener(
     }
 );
 
-// =========================
+
+ // =========================
 // 新規公演追加
 // =========================
 
@@ -2711,27 +2712,40 @@ addPerformanceButton.addEventListener(
 
         performanceNote.value = "";
 
-        // 参加者のチェックをすべて外す
-        const checkboxes =
-            performancePeopleCheckboxes.querySelectorAll(
-                "input[type='checkbox']"
+        // 参加者チェックボックスを作り直す
+        performancePeopleCheckboxes.innerHTML = "";
+
+        people.forEach(person => {
+
+            const label =
+                document.createElement("label");
+
+            label.style.display = "block";
+            label.style.marginBottom = "6px";
+
+            const checkbox =
+                document.createElement("input");
+
+            checkbox.type = "checkbox";
+            checkbox.value = person.id;
+
+            label.appendChild(checkbox);
+
+            label.appendChild(
+                document.createTextNode(" " + person.name)
             );
 
-        checkboxes.forEach(
-            checkbox => {
-                checkbox.checked = false;
-            }
-        );
+            performancePeopleCheckboxes.appendChild(label);
+        });
 
         // 作品一覧を読み込む
         await loadPerformanceWorks();
 
         // 公演登録画面を開く
-        performanceModal.classList.remove(
-            "hidden"
-        );
+        performanceModal.classList.remove("hidden");
     }
 );
+
 
 // =========================
 // 公演登録画面を閉じる
