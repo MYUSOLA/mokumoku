@@ -80,14 +80,19 @@ async function loadSchedules() {
         person: Array.isArray(row.person) ? row.person : [],
         note: row.note || "",
         announcement: row.announcement !== false,
-        announcementMinutes: Number(row.announcementMinutes ?? 30)
+        announcementMinutes: Number(row.announcementMinutes ?? 30),
+
+        // 公演情報
+        event_type: row.event_type || "normal",
+        performance_type: row.performance_type || "",
+        work_id: row.work_id ?? null,
+        work_title: row.work_title || ""
     }));
 
     console.log(
         `Supabaseから予定を${schedules.length}件読み込みました。`
     );
 }
-
 // =========================
 // 予定を新規保存
 // =========================
@@ -288,7 +293,8 @@ function getDisplayTime(time, timeType) {
     return time || "時間未指定";
 }
 
-// =========================
+
+ // =========================
 // 予定をメモリ上でも更新
 // =========================
 
@@ -307,7 +313,13 @@ function normalizeSchedule(schedule) {
         announcement: schedule.announcement !== false,
         announcementMinutes: Number(
             schedule.announcementMinutes ?? 30
-        )
+        ),
+
+        // 公演情報
+        event_type: schedule.event_type || "normal",
+        performance_type: schedule.performance_type || "",
+        work_id: schedule.work_id ?? null,
+        work_title: schedule.work_title || ""
     };
 }
 
@@ -332,6 +344,7 @@ function removeScheduleFromMemory(id) {
         schedules.splice(index, 1);
     }
 }
+
 
 // =========================
 // Webサーバー
@@ -527,7 +540,8 @@ app.put("/works/:id", async (req, res) => {
 });
 
 
-// =========================
+
+ // =========================
 // Webサイトから予定追加
 // =========================
 
@@ -563,7 +577,13 @@ app.post("/schedules", async (req, res) => {
             announcementMinutes:
                 Number.isFinite(Number(body.announcementMinutes))
                     ? Number(body.announcementMinutes)
-                    : 30
+                    : 30,
+
+            // 公演情報
+            event_type: body.event_type || "normal",
+            performance_type: body.performance_type || "",
+            work_id: body.work_id ?? null,
+            work_title: String(body.work_title || "")
         };
 
         const rows = await insertSchedules([newSchedule]);
@@ -652,6 +672,28 @@ app.put("/schedules/:id", async (req, res) => {
             if (Number.isFinite(minutes)) {
                 updated.announcementMinutes = minutes;
             }
+        }
+
+        // 公演情報の編集
+        if (body.event_type !== undefined) {
+            updated.event_type = String(body.event_type || "normal");
+        }
+
+        if (body.performance_type !== undefined) {
+            updated.performance_type = String(
+                body.performance_type || ""
+            );
+        }
+
+        if (body.work_id !== undefined) {
+            updated.work_id = body.work_id === null
+                || body.work_id === ""
+                ? null
+                : Number(body.work_id);
+        }
+
+        if (body.work_title !== undefined) {
+            updated.work_title = String(body.work_title || "");
         }
 
         updated.id = current.id;
