@@ -125,6 +125,65 @@ const deleteEventButton =
     document.getElementById("deleteEventButton");
 
 // =========================
+// 公演登録画面
+// =========================
+
+const performanceModal =
+    document.getElementById("performanceModal");
+
+const closePerformanceModal =
+    document.getElementById("closePerformanceModal");
+
+const performanceModalTitle =
+    document.getElementById("performanceModalTitle");
+
+const performanceDate =
+    document.getElementById("performanceDate");
+
+const performanceType =
+    document.getElementById("performanceType");
+
+const performanceWork =
+    document.getElementById("performanceWork");
+
+const performanceTimeType =
+    document.getElementById("performanceTimeType");
+
+const performanceTimeLabel =
+    document.getElementById("performanceTimeLabel");
+
+const performanceTime =
+    document.getElementById("performanceTime");
+
+const performancePeopleCheckboxes =
+    document.getElementById("performancePeopleCheckboxes");
+
+const performanceNote =
+    document.getElementById("performanceNote");
+
+const savePerformanceButton =
+    document.getElementById("savePerformanceButton");
+
+// =========================
+// 作品管理画面
+// =========================
+
+const performanceWorksModal =
+    document.getElementById("performanceWorksModal");
+
+const closePerformanceWorksModal =
+    document.getElementById("closePerformanceWorksModal");
+
+const newPerformanceWorkName =
+    document.getElementById("newPerformanceWorkName");
+
+const addPerformanceWorkButton =
+    document.getElementById("addPerformanceWorkButton");
+
+const performanceWorksList =
+    document.getElementById("performanceWorksList");
+
+// =========================
 // 備考入力欄
 // =========================
 
