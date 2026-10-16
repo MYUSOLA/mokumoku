@@ -2495,7 +2495,7 @@ closeAddEventModal.addEventListener(
 
 addPerformanceButton.addEventListener(
     "click",
-    () => {
+    async () => {
 
         // 公演登録画面を初期状態にする
         performanceModalTitle.textContent =
@@ -2528,7 +2528,10 @@ addPerformanceButton.addEventListener(
             }
         );
 
-        // 作品一覧を読み込む処理は次の手順で追加する
+        // 作品一覧を読み込む
+        await loadPerformanceWorks();
+
+        // 公演登録画面を開く
         performanceModal.classList.remove(
             "hidden"
         );
