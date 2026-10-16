@@ -305,6 +305,12 @@ let events = [];
 let selectedEvent = null;
 let isEditing = false;
 
+// =========================
+// 公演作品データ
+// =========================
+
+let performanceWorks = [];
+
 
 // =========================
 // 現在の年月
