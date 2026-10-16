@@ -358,7 +358,7 @@ app.get("/schedules", (req, res) => {
 app.get("/members", async (req, res) => {
     try {
         const result = await supabaseRequest(
-            "site_members?id=eq.1&select=members"
+            "members?id=eq.1&select=members"
         );
 
         const members = result?.[0]?.members ?? [];
@@ -391,7 +391,7 @@ app.put("/members", async (req, res) => {
         ];
 
         const result = await supabaseRequest(
-            "site_members?on_conflict=id",
+            "members?on_conflict=id",
             {
                 method: "POST",
                 headers: {
