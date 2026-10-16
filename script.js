@@ -254,7 +254,7 @@ let year = today.getFullYear();
 let month = today.getMonth();
 
 
- // =========================
+// =========================
 // 共有サーバーからメンバー一覧を読み込む
 // =========================
 
@@ -272,64 +272,15 @@ async function loadPeopleFromServer() {
 
     const data = await response.json();
 
-   if (!Array.isArray(data)) {
-    throw new Error(
-        "共有メンバーのデータ形式が正しくありません"
-    );
-}
-
-// 共有サーバーの一覧で置き換える
-people = data.map(name => ({
-    id: "person_" + name,
-    name: name
-}));
-    // 端末側にも保存
-    localStorage.setItem(
-        "mySchedulePeople",
-        JSON.stringify(people)
-    );
-
-    // 画面の人物一覧を更新
-    updatePersonFilter();
-    updatePeopleCheckboxes();
-    updatePersonalSchedulePeople();
-
-    console.log(
-        "共有メンバーを読み込みました：",
-        people
-    );
-}
-
-
- // =========================
-// 共有サーバーからメンバー一覧を読み込む
-// =========================
-
-async function loadPeopleFromServer() {
-
-    const response = await fetch(
-        `${API_BASE_URL}/members`
-    );
-
-    if (!response.ok) {
-        throw new Error(
-            "共有メンバーの取得に失敗しました"
-        );
-    }
-
-    const data = await response.json();
-
-    if (
-        !data ||
-        !Array.isArray(data.members)
-    ) {
+    // サーバーから配列が返ってきているか確認
+    if (!Array.isArray(data)) {
         throw new Error(
             "共有メンバーのデータ形式が正しくありません"
         );
     }
 
     // 共有サーバーの一覧で置き換える
-    people = data.members.map(name => ({
+    people = data.map(name => ({
         id: "person_" + name,
         name: name
     }));
