@@ -439,6 +439,94 @@ app.get("/works", async (req, res) => {
 });
 
 
+ // =========================
+// 作品を新規登録
+// =========================
+
+app.post("/works", async (req, res) => {
+    try {
+        const name = String(req.body?.name || "").trim();
+
+        if (!name) {
+            return res.status(400).json({
+                error: "作品名を入力してください"
+            });
+        }
+
+        const rows = await supabaseRequest(
+            "performance_works?select=id,name,created_at",
+            {
+                method: "POST",
+                headers: {
+                    Prefer: "return=representation"
+                },
+                body: JSON.stringify({ name })
+            }
+        );
+
+        res.status(201).json(rows[0]);
+    } catch (error) {
+        logError("作品登録", error);
+
+        const isDuplicate =
+            String(error.message).includes("23505");
+
+        res.status(isDuplicate ? 409 : 500).json({
+            error: isDuplicate
+                ? "同じ名前の作品がすでに登録されています"
+                : "作品の登録に失敗しました"
+        });
+    }
+});
+
+// =========================
+// 作品名を編集
+// =========================
+
+app.put("/works/:id", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const name = String(req.body?.name || "").trim();
+
+        if (!Number.isSafeInteger(id) || id <= 0 || !name) {
+            return res.status(400).json({
+                error: "作品IDまたは作品名が正しくありません"
+            });
+        }
+
+        const rows = await supabaseRequest(
+            `performance_works?id=eq.${id}&select=id,name,created_at`,
+            {
+                method: "PATCH",
+                headers: {
+                    Prefer: "return=representation"
+                },
+                body: JSON.stringify({ name })
+            }
+        );
+
+        if (!rows || rows.length === 0) {
+            return res.status(404).json({
+                error: "作品が見つかりません"
+            });
+        }
+
+        res.json(rows[0]);
+    } catch (error) {
+        logError("作品名編集", error);
+
+        const isDuplicate =
+            String(error.message).includes("23505");
+
+        res.status(isDuplicate ? 409 : 500).json({
+            error: isDuplicate
+                ? "同じ名前の作品がすでに登録されています"
+                : "作品名の編集に失敗しました"
+        });
+    }
+});
+
+
 // =========================
 // Webサイトから予定追加
 // =========================
