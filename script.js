@@ -272,21 +272,17 @@ async function loadPeopleFromServer() {
 
     const data = await response.json();
 
-    if (
-        !data ||
-        !Array.isArray(data.members)
-    ) {
-        throw new Error(
-            "共有メンバーのデータ形式が正しくありません"
-        );
-    }
+   if (!Array.isArray(data)) {
+    throw new Error(
+        "共有メンバーのデータ形式が正しくありません"
+    );
+}
 
-    // 共有サーバーの一覧で置き換える
-    people = data.members.map(name => ({
-        id: "person_" + name,
-        name: name
-    }));
-
+// 共有サーバーの一覧で置き換える
+people = data.map(name => ({
+    id: "person_" + name,
+    name: name
+}));
     // 端末側にも保存
     localStorage.setItem(
         "mySchedulePeople",
