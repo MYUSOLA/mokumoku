@@ -431,7 +431,8 @@ app.put("/members", async (req, res) => {
 });
 
 
- // =========================
+
+// =========================
 // 作品一覧（Supabaseから取得）
 // =========================
 
@@ -451,8 +452,7 @@ app.get("/works", async (req, res) => {
     }
 });
 
-
- // =========================
+// =========================
 // 作品を新規登録
 // =========================
 
@@ -473,9 +473,17 @@ app.post("/works", async (req, res) => {
                 headers: {
                     Prefer: "return=representation"
                 },
-                body: JSON.stringify({ name })
+                body: JSON.stringify({
+                    name
+                })
             }
         );
+
+        if (!rows || rows.length === 0) {
+            throw new Error(
+                "Supabaseから作品の保存結果が返されませんでした。"
+            );
+        }
 
         res.status(201).json(rows[0]);
     } catch (error) {
@@ -501,7 +509,11 @@ app.put("/works/:id", async (req, res) => {
         const id = Number(req.params.id);
         const name = String(req.body?.name || "").trim();
 
-        if (!Number.isSafeInteger(id) || id <= 0 || !name) {
+        if (
+            !Number.isSafeInteger(id) ||
+            id <= 0 ||
+            !name
+        ) {
             return res.status(400).json({
                 error: "作品IDまたは作品名が正しくありません"
             });
@@ -514,7 +526,9 @@ app.put("/works/:id", async (req, res) => {
                 headers: {
                     Prefer: "return=representation"
                 },
-                body: JSON.stringify({ name })
+                body: JSON.stringify({
+                    name
+                })
             }
         );
 
