@@ -216,7 +216,101 @@
                 </button>
             </div>
         </div>
+        <!-- 公演追加・編集 -->
+        <div id="performanceModal" class="modal hidden">
+            <div class="modal-content">
+                <button
+                    type="button"
+                    id="closePerformanceModal"
+                    class="close-button"
+                >×</button>
 
+                <h2 id="performanceModalTitle">公演を追加</h2>
+
+                <label>
+                    公演日
+                    <input type="date" id="performanceDate">
+                </label>
+
+                <label>
+                    公演の種類
+                    <select id="performanceType">
+                        <option value="normal">通常公演</option>
+                        <option value="sale">セール公演</option>
+                    </select>
+                </label>
+
+                <label>
+                    作品
+                    <select id="performanceWork">
+                        <option value="">作品を選択</option>
+                    </select>
+                </label>
+
+                <label>
+                    時間の種類
+                    <select id="performanceTimeType">
+                        <option value="time">🕐 時刻を指定</option>
+                        <option value="morning">🌅 朝</option>
+                        <option value="afternoon">☀️ 昼</option>
+                        <option value="evening">🌆 夕方</option>
+                        <option value="night">🌙 夜</option>
+                        <option value="allday">📅 一日中</option>
+                    </select>
+                </label>
+
+                <label id="performanceTimeLabel">
+                    時間
+                    <input type="time" id="performanceTime">
+                </label>
+
+                <label>参加者</label>
+                <div id="performancePeopleCheckboxes"></div>
+
+                <label for="performanceNote">備考（任意）</label>
+                <textarea
+                    id="performanceNote"
+                    rows="4"
+                    maxlength="2000"
+                    placeholder="公演に関するメモ"
+                ></textarea>
+
+                <button
+                    type="button"
+                    id="savePerformanceButton"
+                    class="save-event-button"
+                >公演を登録</button>
+            </div>
+        </div>
+
+        <!-- 作品管理 -->
+        <div id="performanceWorksModal" class="modal hidden">
+            <div class="modal-content">
+                <button
+                    type="button"
+                    id="closePerformanceWorksModal"
+                    class="close-button"
+                >×</button>
+
+                <h2>作品管理</h2>
+
+                <label for="newPerformanceWorkName">作品名</label>
+                <input
+                    type="text"
+                    id="newPerformanceWorkName"
+                    maxlength="200"
+                    placeholder="作品名を入力"
+                >
+
+                <button
+                    type="button"
+                    id="addPerformanceWorkButton"
+                >作品を追加</button>
+
+                <div id="performanceWorksList"></div>
+            </div>
+        </div>
+        
         <!-- メンバー管理 -->
         <div id="peopleModal" class="modal hidden">
             <div class="modal-content">
