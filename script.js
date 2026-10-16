@@ -2760,6 +2760,120 @@ closePerformanceModal.addEventListener(
     }
 );
 
+
+ // =========================
+// 公演を登録
+// =========================
+
+savePerformanceButton.addEventListener(
+    "click",
+    async () => {
+
+        const date = performanceDate.value;
+        const timeType = performanceTimeType.value;
+        const time = performanceTime.value;
+        const workId = performanceWork.value;
+        const type = performanceType.value;
+        const note = performanceNote.value.trim();
+
+        // 選択された作品を取得
+        const selectedWork = performanceWorks.find(
+            work => String(work.id) === String(workId)
+        );
+
+        // 選択された参加者を取得
+        const checkedPeople =
+            performancePeopleCheckboxes.querySelectorAll(
+                'input[type="checkbox"]:checked'
+            );
+
+        const personIds = Array.from(
+            checkedPeople
+        ).map(checkbox => checkbox.value);
+
+        const personNames = personIds.map(
+            personId => getPersonName(personId)
+        );
+
+        // 入力チェック
+        if (!date) {
+            alert("公演日を選択してね。");
+            return;
+        }
+
+        if (!selectedWork) {
+            alert("作品を選択してね。");
+            return;
+        }
+
+        if (personNames.length === 0) {
+            alert("参加者を1人以上選択してね。");
+            return;
+        }
+
+        if (timeType === "time" && !time) {
+            alert("時刻を指定する場合は時間を入力してね。");
+            return;
+        }
+
+        const requestBody = {
+            date: date,
+            time: timeType === "time" ? time : "",
+            timeType: timeType,
+            title: selectedWork.name,
+            person: personNames,
+            note: note,
+            event_type: "performance",
+            performance_type: type,
+            work_id: selectedWork.id,
+            work_title: selectedWork.name
+        };
+
+        savePerformanceButton.disabled = true;
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/schedules`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(requestBody)
+                }
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+
+                throw new Error(
+                    `保存に失敗しました（HTTP ${response.status}）：${errorText}`
+                );
+            }
+
+            await loadEventsFromServer();
+
+            performanceModal.classList.add("hidden");
+
+            alert("公演を登録したよ！");
+
+        } catch (error) {
+            console.error(
+                "公演の登録に失敗しました：",
+                error
+            );
+
+            alert(
+                "公演を登録できなかったよ。ブラウザのコンソールかRenderのログで原因を確認しよう。"
+            );
+
+        } finally {
+            savePerformanceButton.disabled = false;
+        }
+    }
+);
+
+
 // =========================
 // 編集ボタン
 // =========================
