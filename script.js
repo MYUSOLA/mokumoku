@@ -186,6 +186,7 @@ const addPerformanceWorkButton =
 const performanceWorksList =
     document.getElementById("performanceWorksList");
 
+
 // =========================
 // 作品管理画面を開く・閉じる
 // =========================
@@ -194,10 +195,8 @@ openPerformanceWorksButton.addEventListener(
     "click",
     async () => {
 
-        // 最新の作品一覧を読み込む
         await loadPerformanceWorks();
 
-        // 作品管理画面を開く
         performanceWorksModal.classList.remove(
             "hidden"
         );
@@ -208,10 +207,174 @@ closePerformanceWorksModal.addEventListener(
     "click",
     () => {
 
-        // 作品管理画面を閉じる
         performanceWorksModal.classList.add(
             "hidden"
         );
+    }
+);
+
+
+// =========================
+// 作品一覧を表示
+// =========================
+
+function renderPerformanceWorks() {
+
+    performanceWorksList.innerHTML = "";
+
+    if (performanceWorks.length === 0) {
+
+        performanceWorksList.textContent =
+            "登録されている作品はありません。";
+
+        return;
+    }
+
+    performanceWorks.forEach(work => {
+
+        const item = document.createElement("div");
+
+        item.style.display = "flex";
+        item.style.gap = "8px";
+        item.style.alignItems = "center";
+        item.style.marginTop = "10px";
+
+        const nameInput =
+            document.createElement("input");
+
+        nameInput.type = "text";
+        nameInput.value = work.name;
+        nameInput.maxLength = 200;
+        nameInput.style.flex = "1";
+
+        const editButton =
+            document.createElement("button");
+
+        editButton.type = "button";
+        editButton.textContent = "名前を変更";
+
+        editButton.addEventListener(
+            "click",
+            async () => {
+
+                const newName =
+                    nameInput.value.trim();
+
+                if (!newName) {
+                    alert("作品名を入力してね。");
+                    return;
+                }
+
+                try {
+
+                    const response = await fetch(
+                        `${API_BASE_URL}/works/${work.id}`,
+                        {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                name: newName
+                            })
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "作品名の更新に失敗しました"
+                        );
+                    }
+
+                    await loadPerformanceWorks();
+
+                    renderPerformanceWorks();
+
+                    alert("作品名を変更したよ！");
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    alert(
+                        "作品名を変更できなかったよ。通信状況を確認してね。"
+                    );
+                }
+            }
+        );
+
+        item.appendChild(nameInput);
+        item.appendChild(editButton);
+
+        performanceWorksList.appendChild(item);
+    });
+}
+
+
+// =========================
+// 作品を追加
+// =========================
+
+addPerformanceWorkButton.addEventListener(
+    "click",
+    async () => {
+
+        const name =
+            newPerformanceWorkName.value.trim();
+
+        if (!name) {
+            alert("作品名を入力してね。");
+            return;
+        }
+
+        addPerformanceWorkButton.disabled = true;
+
+        try {
+
+            const response = await fetch(
+                `${API_BASE_URL}/works`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        name: name
+                    })
+                }
+            );
+
+            if (!response.ok) {
+
+                const errorText =
+                    await response.text();
+
+                throw new Error(errorText);
+            }
+
+            newPerformanceWorkName.value = "";
+
+            await loadPerformanceWorks();
+
+            renderPerformanceWorks();
+
+            alert("作品を追加したよ！");
+
+        } catch (error) {
+
+            console.error(
+                "作品の追加に失敗しました:",
+                error
+            );
+
+            alert(
+                "作品を追加できなかったよ。通信状況やサーバーのログを確認しよう。"
+            );
+
+        } finally {
+
+            addPerformanceWorkButton.disabled = false;
+        }
     }
 );
 
