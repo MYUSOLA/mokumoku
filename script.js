@@ -311,6 +311,65 @@ let isEditing = false;
 
 let performanceWorks = [];
 
+// =========================
+// 公演作品一覧の読み込み
+// =========================
+
+async function loadPerformanceWorks() {
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE_URL}/works`
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "作品一覧の取得に失敗しました"
+            );
+        }
+
+        performanceWorks = await response.json();
+
+        // 作品の選択欄を初期化
+        performanceWork.innerHTML = "";
+
+        const defaultOption =
+            document.createElement("option");
+
+        defaultOption.value = "";
+        defaultOption.textContent = "作品を選択";
+
+        performanceWork.appendChild(
+            defaultOption
+        );
+
+        // 取得した作品を選択肢に追加
+        performanceWorks.forEach(work => {
+
+            const option =
+                document.createElement("option");
+
+            option.value = work.id;
+            option.textContent = work.name;
+
+            performanceWork.appendChild(
+                option
+            );
+        });
+
+    } catch (error) {
+
+        console.error(
+            "作品一覧の読み込みに失敗しました:",
+            error
+        );
+
+        alert(
+            "作品一覧を読み込めなかったよ。通信状況を確認してね。"
+        );
+    }
+}
 
 // =========================
 // 現在の年月
