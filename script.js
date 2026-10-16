@@ -2471,6 +2471,19 @@ addPerformanceButton.addEventListener(
 );
 
 // =========================
+// 公演登録画面を閉じる
+// =========================
+
+closePerformanceModal.addEventListener(
+    "click",
+    () => {
+        performanceModal.classList.add(
+            "hidden"
+        );
+    }
+);
+
+// =========================
 // 編集ボタン
 // =========================
 
