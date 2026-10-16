@@ -263,8 +263,8 @@ function savePeople() {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            members: people
-        })
+    members: people.map(person => person.name)
+})
     })
     .then(response => {
         if (!response.ok) {
