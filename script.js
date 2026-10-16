@@ -2846,15 +2846,30 @@ async function loadEventsFromServer() {
 
 
 
-// =========================
+
+ // =========================
 // 初期表示
 // =========================
 
-availabilityView.style.display =
-    "none";
+availabilityView.style.display = "none";
 
-updatePersonFilter();
-updatePeopleCheckboxes();
-updatePersonalSchedulePeople();
+async function initializeApp() {
+    try {
+        await loadPeopleFromServer();
+    } catch (error) {
+        console.error(
+            "共有メンバーの読み込みに失敗しました:",
+            error
+        );
 
-loadEventsFromServer();
+        alert(
+            "共有メンバーを読み込めませんでした。メンバー一覧を更新せず、予定の読み込みも中止しました。"
+        );
+
+        return;
+    }
+
+    await loadEventsFromServer();
+}
+
+initializeApp();
