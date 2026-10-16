@@ -6,12 +6,15 @@ const API_BASE_URL = "https://mokumoku.onrender.com";
 
 
 
- // =========================
- // DOM取得
- // =========================
+// =========================
+// DOM取得
+// =========================
 
 const addEventButton =
     document.getElementById("addEventButton");
+
+const addPerformanceButton =
+    document.getElementById("addPerformanceButton");
 
 const addPersonalScheduleButton =
     document.getElementById("addPersonalScheduleButton");
