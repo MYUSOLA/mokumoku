@@ -352,6 +352,72 @@ app.get("/schedules", (req, res) => {
 });
 
 // =========================
+// メンバー一覧（全端末で共有）
+// =========================
+
+app.get("/members", async (req, res) => {
+    try {
+        const result = await supabaseRequest(
+            "site_members?id=eq.1&select=members"
+        );
+
+        const members = result?.[0]?.members ?? [];
+        res.json(members);
+    } catch (error) {
+        console.error("メンバー一覧の取得に失敗:", error);
+        res.status(500).json({
+            error: "メンバー一覧の取得に失敗しました"
+        });
+    }
+});
+
+app.put("/members", async (req, res) => {
+    try {
+        const input = req.body?.members;
+
+        if (!Array.isArray(input)) {
+            return res.status(400).json({
+                error: "メンバー一覧の形式が正しくありません"
+            });
+        }
+
+        const members = [
+            ...new Set(
+                input
+                    .filter(name => typeof name === "string")
+                    .map(name => name.trim())
+                    .filter(Boolean)
+            )
+        ];
+
+        const result = await supabaseRequest(
+            "site_members?on_conflict=id",
+            {
+                method: "POST",
+                headers: {
+                    Prefer: "resolution=merge-duplicates,return=representation"
+                },
+                body: JSON.stringify([
+                    {
+                        id: 1,
+                        members
+                    }
+                ])
+            }
+        );
+
+        res.json({
+            members: result?.[0]?.members ?? members
+        });
+    } catch (error) {
+        console.error("メンバー一覧の保存に失敗:", error);
+        res.status(500).json({
+            error: "メンバー一覧の保存に失敗しました"
+        });
+    }
+});
+
+// =========================
 // Webサイトから予定追加
 // =========================
 
