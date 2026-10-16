@@ -50,10 +50,29 @@
             <button id="availabilityViewButton">👥 空き状況</button>
         </div>
 
-        <button id="addEventButton" class="add-event-button">
-            ＋ 予定を追加
-        </button>
-        <button id="addPersonalScheduleButton">個人予定を追加</button>
+       <!-- 予定追加ボタン -->
+<div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
+
+    <button
+        type="button"
+        id="addEventButton"
+        class="add-event-button"
+        style="flex: 1; min-width: 0; height: 48px; padding: 8px 4px; box-sizing: border-box; background-color: #222222; color: #ffffff; border: 1px solid #222222; border-radius: 8px; font-size: 15px; cursor: pointer;"
+    >予定を追加</button>
+
+    <button
+        type="button"
+        id="addPerformanceButton"
+        style="flex: 1; min-width: 0; height: 48px; padding: 8px 4px; box-sizing: border-box; background-color: #8edcf5; color: #17212b; border: 1px solid #8edcf5; border-radius: 8px; font-size: 15px; cursor: pointer;"
+    >公演を追加</button>
+
+    <button
+        type="button"
+        id="addPersonalScheduleButton"
+        style="flex: 1; min-width: 0; height: 48px; padding: 8px 4px; box-sizing: border-box; background-color: #ffffff; color: #222222; border: 1px solid #bbbbbb; border-radius: 8px; font-size: 15px; cursor: pointer;"
+    >個人予定を追加</button>
+
+</div>
 
         <div id="calendar" class="calendar"></div>
 
