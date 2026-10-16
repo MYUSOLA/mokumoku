@@ -187,6 +187,35 @@ const performanceWorksList =
     document.getElementById("performanceWorksList");
 
 // =========================
+// 作品管理画面を開く・閉じる
+// =========================
+
+openPerformanceWorksButton.addEventListener(
+    "click",
+    async () => {
+
+        // 最新の作品一覧を読み込む
+        await loadPerformanceWorks();
+
+        // 作品管理画面を開く
+        performanceWorksModal.classList.remove(
+            "hidden"
+        );
+    }
+);
+
+closePerformanceWorksModal.addEventListener(
+    "click",
+    () => {
+
+        // 作品管理画面を閉じる
+        performanceWorksModal.classList.add(
+            "hidden"
+        );
+    }
+);
+
+// =========================
 // 備考入力欄
 // =========================
 
