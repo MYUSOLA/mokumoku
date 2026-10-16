@@ -569,3 +569,16 @@ main {
 #performancePeopleCheckboxes input[type="checkbox"] {
     flex-shrink: 0;
 }
+
+
+/* 通常公演：緑色 */
+.event.normal-performance-event {
+    background-color: #d4edda;
+    border-left: 4px solid #28a745;
+}
+
+/* セール公演：オレンジ色 */
+.event.sale-performance-event {
+    background-color: #ffe0b2;
+    border-left: 4px solid #f57c00;
+}
