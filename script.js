@@ -201,19 +201,29 @@ clearAllPersonalScheduleDates.addEventListener(
     }
 );
 
-// =========================
+
+ // =========================
 // 人物データ
 // =========================
 
-let people = JSON.parse(
-    localStorage.getItem("mySchedulePeople")
-) || [
-    { id: "alice", name: "Aさん" },
-    { id: "bob", name: "Bさん" },
-    { id: "charlie", name: "Cさん" },
-    { id: "david", name: "Dさん" },
-    { id: "eve", name: "Eさん" }
-];
+// 起動直後は端末に保存されているデータを仮表示する。
+// その後、共有サーバーから取得した一覧で置き換える。
+let people = [];
+
+try {
+    const savedPeople = JSON.parse(
+        localStorage.getItem("mySchedulePeople")
+    );
+
+    if (Array.isArray(savedPeople)) {
+        people = savedPeople;
+    }
+} catch (error) {
+    console.error(
+        "端末のメンバー情報を読み込めませんでした:",
+        error
+    );
+}
 
 // =========================
 // 表示する人の選択状態
