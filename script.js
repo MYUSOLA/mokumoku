@@ -245,15 +245,39 @@ let month = today.getMonth();
 
 
 // =========================
-// 人物データ保存
+// 人物データ保存（端末＋共有サーバー）
 // =========================
 
 function savePeople() {
 
+    // 今までどおり端末にも保存
     localStorage.setItem(
         "mySchedulePeople",
         JSON.stringify(people)
     );
+
+    // 共有サーバーにも保存
+    fetch(`${API_BASE_URL}/members`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            members: people
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("メンバー保存に失敗しました");
+        }
+        return response.json();
+    })
+    .catch(error => {
+        console.error(
+            "共有メンバーの保存に失敗:",
+            error
+        );
+    });
 }
 
 
