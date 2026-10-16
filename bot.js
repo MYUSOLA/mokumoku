@@ -417,6 +417,28 @@ app.put("/members", async (req, res) => {
     }
 });
 
+
+ // =========================
+// 作品一覧（Supabaseから取得）
+// =========================
+
+app.get("/works", async (req, res) => {
+    try {
+        const works = await supabaseRequest(
+            "performance_works?select=id,name,created_at&order=id.asc"
+        );
+
+        res.json(works);
+    } catch (error) {
+        logError("作品一覧の取得", error);
+
+        res.status(500).json({
+            error: "作品一覧の取得に失敗しました"
+        });
+    }
+});
+
+
 // =========================
 // Webサイトから予定追加
 // =========================
