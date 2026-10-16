@@ -532,3 +532,18 @@ main {
         width: min(240px, 85vw);
     }
 }
+
+
+/* 公演追加画面のスクロール修正 */
+#performanceModal {
+    overflow-y: auto;
+    align-items: flex-start;
+}
+
+#performanceModal .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    margin-top: 5vh;
+    margin-bottom: 5vh;
+}
