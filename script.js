@@ -1808,15 +1808,25 @@ function showCalendar() {
         });
 
 
+        
         // =========================
-        // 通常予定を表示
+        // 通常予定・公演を表示
         // =========================
 
         normalEvents.forEach(event => {
             const eventElement =
                 document.createElement("div");
 
-            eventElement.className = "event";
+            // 公演の種類に応じて色分け
+            if (event.event_type === "performance") {
+                if (event.performance_type === "sale") {
+                    eventElement.className = "event sale-performance-event";
+                } else {
+                    eventElement.className = "event normal-performance-event";
+                }
+            } else {
+                eventElement.className = "event";
+            }
 
             eventElement.textContent =
                 `${getDisplayTime(event)} ${event.title}`;
@@ -1827,6 +1837,7 @@ function showCalendar() {
 
             dayElement.appendChild(eventElement);
         });
+
 
 
         // =========================
@@ -3240,41 +3251,22 @@ async function loadEventsFromServer() {
                             : [];
 
                     return {
+    id: schedule.id,
+    date: schedule.date,
+    time: schedule.time || "",
+    timeType: schedule.timeType || "time",
+    title: schedule.title,
+    note: schedule.note || "",
+    people: personNames.map(getPersonIdByName),
+    announcement: schedule.announcement !== false,
+    announcementMinutes: schedule.announcementMinutes || 30,
 
-                        id:
-                            schedule.id,
-
-                        date:
-                            schedule.date,
-
-                        time:
-                            schedule.time ||
-                            "",
-
-                        timeType:
-                            schedule.timeType ||
-                            "time",
-
-                        title:
-                            schedule.title,
-
-                        // 備考を読み込む
-                        note:
-                            schedule.note || "",
-
-                        people:
-                            personNames.map(
-                                getPersonIdByName
-                            ),
-
-                        announcement:
-                            schedule.announcement !==
-                            false,
-
-                        announcementMinutes:
-                            schedule.announcementMinutes ||
-                            30
-                    };
+    // 公演の情報
+    event_type: schedule.event_type || "normal",
+    performance_type: schedule.performance_type || "",
+    work_id: schedule.work_id ?? null,
+    work_title: schedule.work_title || ""
+};
                 }
             );
 
