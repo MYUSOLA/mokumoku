@@ -187,7 +187,8 @@ const performanceWorksList =
     document.getElementById("performanceWorksList");
 
 
-// =========================
+
+ // =========================
 // 作品管理画面を開く・閉じる
 // =========================
 
@@ -198,8 +199,14 @@ openPerformanceWorksButton.addEventListener(
         // 作品一覧をサーバーから読み込む
         await loadPerformanceWorks();
 
-        // 登録済みの作品を編集できる状態で表示する
+        // 登録済みの作品を表示する
         renderPerformanceWorks();
+
+        // 作品一覧をスクロールできるようにする
+        performanceWorksList.style.maxHeight = "50vh";
+        performanceWorksList.style.overflowY = "auto";
+        performanceWorksList.style.overflowX = "hidden";
+        performanceWorksList.style.paddingRight = "8px";
 
         // 作品管理画面を開く
         performanceWorksModal.classList.remove(
