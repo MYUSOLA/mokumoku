@@ -195,8 +195,13 @@ openPerformanceWorksButton.addEventListener(
     "click",
     async () => {
 
+        // 作品一覧をサーバーから読み込む
         await loadPerformanceWorks();
 
+        // 登録済みの作品を編集できる状態で表示する
+        renderPerformanceWorks();
+
+        // 作品管理画面を開く
         performanceWorksModal.classList.remove(
             "hidden"
         );
@@ -207,12 +212,12 @@ closePerformanceWorksModal.addEventListener(
     "click",
     () => {
 
+        // 作品管理画面を閉じる
         performanceWorksModal.classList.add(
             "hidden"
         );
     }
 );
-
 
 // =========================
 // 作品一覧を表示
