@@ -28,6 +28,16 @@ const availabilityView =
 const availabilityTable =
     document.getElementById("availabilityTable");
 
+const availabilityStickyToggle =
+    document.getElementById("availabilityStickyToggle");
+
+availabilityStickyToggle.addEventListener("change", () => {
+    availabilityTable.classList.toggle(
+        "sticky-enabled",
+        availabilityStickyToggle.checked
+    );
+});
+
 const availabilityPeopleFilter =
     document.getElementById("availabilityPeopleFilter");
 
@@ -2595,8 +2605,13 @@ function renderAvailability() {
     }
 
 
-    availabilityTable.appendChild(
+        availabilityTable.appendChild(
         table
+    );
+
+    availabilityTable.classList.toggle(
+        "sticky-enabled",
+        availabilityStickyToggle.checked
     );
 }
 
