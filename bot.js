@@ -802,7 +802,8 @@ client.on("warn", message => {
     console.warn("[Discord警告]", message);
 });
 
-// =========================
+
+ // =========================
 // Discordコマンド
 // =========================
 
@@ -814,24 +815,28 @@ client.on("interactionCreate", async interaction => {
 
     if (interaction.isAutocomplete()) {
 
+        // add-mdms以外の候補表示は処理しない
         if (interaction.commandName !== "add-mdms") {
             return;
         }
 
         try {
+            // 入力中の作品名
+            const focusedValue = String(
+                interaction.options.getFocused()
+            ).toLowerCase();
 
-            const focusedValue =
-                interaction.options.getFocused();
-
+            // Supabaseから作品一覧を取得
             const works = await supabaseRequest(
                 "performance_works?select=id,name&order=id.asc"
             );
 
+            // 入力文字に一致する作品を候補にする
             const filteredWorks = works
                 .filter(work =>
-                    work.name
+                    String(work.name || "")
                         .toLowerCase()
-                        .includes(focusedValue.toLowerCase())
+                        .includes(focusedValue)
                 )
                 .slice(0, 25)
                 .map(work => ({
@@ -842,11 +847,7 @@ client.on("interactionCreate", async interaction => {
             await interaction.respond(filteredWorks);
 
         } catch (error) {
-
-            console.error(
-                "作品候補の取得に失敗しました:",
-                error
-            );
+            logError("マダミス作品候補の取得", error);
 
             await interaction.respond([]).catch(() => {});
         }
@@ -854,8 +855,16 @@ client.on("interactionCreate", async interaction => {
         return;
     }
 
-    // ここから下は既存のコマンド処理
-    if (!interaction.isChatInputCommand()) return;
+    // =========================
+    // チャットコマンド以外は処理しない
+    // =========================
+
+    if (!interaction.isChatInputCommand()) {
+        return;
+    }
+
+    // この下に、共通の返信設定と既存コマンド処理を続ける
+
 
     
     // =========================
