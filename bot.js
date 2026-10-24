@@ -857,6 +857,109 @@ client.on("interactionCreate", async interaction => {
     // ここから下は既存のコマンド処理
     if (!interaction.isChatInputCommand()) return;
 
+    
+    // =========================
+    // マダミス公演を追加
+    // =========================
+
+    if (interaction.commandName === "add-mdms") {
+        try {
+            const dateInput =
+                interaction.options.getString("date");
+
+            const timeInput =
+                interaction.options.getString("time");
+
+            const workId =
+                interaction.options.getString("work");
+
+            const performanceType =
+                interaction.options.getString("performance_type");
+
+            const personInput =
+                interaction.options.getString("person");
+
+            const note =
+                interaction.options.getString("note") || "";
+
+            // 日付・時間を確認
+            const parsedDate = parseDateInput(dateInput);
+            const parsedTime = parseTimeInput(timeInput);
+
+            if (!parsedDate) {
+                await interaction.reply("日付の形式が正しくないよ。MMDD または YYYYMMDD で指定してね。");
+                return;
+            }
+
+            if (!parsedTime) {
+                await interaction.reply("時間の形式が正しくないよ。");
+                return;
+            }
+
+            // 登録済み作品を取得
+            const works = await supabaseRequest(
+                "performance_works?select=id,name"
+            );
+
+            const selectedWork = works.find(
+                work => String(work.id) === String(workId)
+            );
+
+            if (!selectedWork) {
+                await interaction.reply(
+                    "作品が見つからなかったよ。サイトで作品登録を確認してね。"
+                );
+                return;
+            }
+
+            // 参加者名を空白で分割
+            const personNames = personInput
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+            // 公演予定を作成
+            const schedule = {
+                id: createNewId(),
+                date: parsedDate,
+                time: parsedTime.time,
+                timeType: parsedTime.timeType,
+                title: selectedWork.name,
+                person: personNames,
+                note: note,
+                event_type: "performance",
+                performance_type: performanceType,
+                work_id: Number(selectedWork.id),
+                work_title: selectedWork.name
+            };
+
+            // サーバーへ保存
+            await insertSchedules([schedule]);
+
+            // Bot側の予定データも更新
+            replaceScheduleInMemory(schedule);
+
+            await interaction.reply(
+                `公演予定を登録したよ！\n` +
+                `作品：${selectedWork.name}\n` +
+                `日付：${parsedDate}\n` +
+                `時間：${parsedTime.time}\n` +
+                `種類：${performanceType === "sale" ? "セール公演" : "通常公演"}\n` +
+                `参加者：${personNames.join("、") || "未指定"}`
+            );
+
+        } catch (error) {
+            console.error("公演予定の登録に失敗しました:", error);
+
+            await interaction.reply(
+                "公演予定の登録に失敗したよ。エラーログを確認してね。"
+            ).catch(() => {});
+        }
+
+        return;
+    }
+
+
     try {
         // コマンドへの返信を非公開にする
         const originalReply = interaction.reply.bind(interaction);
