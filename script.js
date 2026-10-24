@@ -1837,7 +1837,15 @@ function showCalendar() {
         const personMatches =
             matchesSelectedPeople(event);
 
-        return dateMatches && personMatches;
+        const performanceMatches =
+            !showPerformancesOnly ||
+            event.event_type === "performance";
+
+        return (
+            dateMatches &&
+            personMatches &&
+            performanceMatches
+        );
     });
 
 
