@@ -807,6 +807,54 @@ client.on("warn", message => {
 // =========================
 
 client.on("interactionCreate", async interaction => {
+
+    // =========================
+    // マダミス作品名の候補表示
+    // =========================
+
+    if (interaction.isAutocomplete()) {
+
+        if (interaction.commandName !== "add-mdms") {
+            return;
+        }
+
+        try {
+
+            const focusedValue =
+                interaction.options.getFocused();
+
+            const works = await supabaseRequest(
+                "performance_works?select=id,name&order=id.asc"
+            );
+
+            const filteredWorks = works
+                .filter(work =>
+                    work.name
+                        .toLowerCase()
+                        .includes(focusedValue.toLowerCase())
+                )
+                .slice(0, 25)
+                .map(work => ({
+                    name: String(work.name).slice(0, 100),
+                    value: String(work.id)
+                }));
+
+            await interaction.respond(filteredWorks);
+
+        } catch (error) {
+
+            console.error(
+                "作品候補の取得に失敗しました:",
+                error
+            );
+
+            await interaction.respond([]).catch(() => {});
+        }
+
+        return;
+    }
+
+    // ここから下は既存のコマンド処理
     if (!interaction.isChatInputCommand()) return;
 
     try {
