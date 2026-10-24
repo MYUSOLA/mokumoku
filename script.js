@@ -1886,8 +1886,32 @@ function showCalendar() {
                 eventElement.className = "event";
             }
 
-            eventElement.textContent =
-                `${getDisplayTime(event)} ${event.title}`;
+           // 公演のタイトルと参加者を表示
+const titleElement = document.createElement("div");
+
+titleElement.textContent =
+    `${getDisplayTime(event)} ${event.title}`;
+
+eventElement.appendChild(titleElement);
+
+// 公演の場合は参加者名も表示
+if (event.event_type === "performance") {
+
+    const peopleElement = document.createElement("div");
+
+    const personNames = Array.isArray(event.people)
+        ? event.people.map(personId => getPersonName(personId))
+        : [];
+
+    peopleElement.textContent =
+        "参加者：" + personNames.join("・");
+
+    peopleElement.style.fontSize = "11px";
+    peopleElement.style.marginTop = "3px";
+    peopleElement.style.overflowWrap = "anywhere";
+
+    eventElement.appendChild(peopleElement);
+}
 
             eventElement.addEventListener("click", () => {
                 openEventModal(event);
