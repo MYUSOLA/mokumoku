@@ -2107,11 +2107,15 @@ function showList() {
 const personMatches =
     matchesSelectedPeople(event);
 
+const performanceMatches =
+    !showPerformancesOnly ||
+    event.event_type === "performance";
 
-                    return (
-                        monthMatches &&
-                        personMatches
-                    );
+return (
+    monthMatches &&
+    personMatches &&
+    performanceMatches
+);
                 }
             )
             .sort(
