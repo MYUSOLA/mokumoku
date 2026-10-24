@@ -526,6 +526,20 @@ let selectedPersonIds = null;
 // true = 公演のみ
 let showPerformancesOnly = false;
 
+// =========================
+// 公演表示フィルターの切り替え
+// =========================
+
+showAllEventsButton.addEventListener("click", () => {
+    showPerformancesOnly = false;
+    refreshCurrentView();
+});
+
+showPerformancesOnlyButton.addEventListener("click", () => {
+    showPerformancesOnly = true;
+    refreshCurrentView();
+});
+
 
 // =========================
 // 予定データ
