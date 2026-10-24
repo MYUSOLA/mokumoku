@@ -98,6 +98,16 @@ const calendarViewButton =
 const listViewButton =
     document.getElementById("listViewButton");
 
+// =========================
+// 公演表示フィルター
+// =========================
+
+const showAllEventsButton =
+    document.getElementById("showAllEventsButton");
+
+const showPerformancesOnlyButton =
+    document.getElementById("showPerformancesOnlyButton");
+
 const listView =
     document.getElementById("listView");
 
@@ -511,6 +521,10 @@ try {
 // =========================
 
 let selectedPersonIds = null;
+
+// false = すべての予定
+// true = 公演のみ
+let showPerformancesOnly = false;
 
 
 // =========================
