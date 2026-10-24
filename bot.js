@@ -867,12 +867,34 @@ client.on("interactionCreate", async interaction => {
 
 
     
+   
     // =========================
-    // マダミス公演を追加
+    // コマンド処理・共通設定
     // =========================
 
-    if (interaction.commandName === "add-mdms") {
-        try {
+    try {
+        // コマンドへの返信を非公開にする
+        const originalReply = interaction.reply.bind(interaction);
+
+        interaction.reply = options => {
+            if (typeof options === "string") {
+                return originalReply({
+                    content: options,
+                    ephemeral: true
+                });
+            }
+
+            return originalReply({
+                ...options,
+                ephemeral: true
+            });
+        };
+
+        // =========================
+        // マダミス公演を追加
+        // =========================
+
+        if (interaction.commandName === "add-mdms") {
             const dateInput =
                 interaction.options.getString("date");
 
@@ -886,28 +908,42 @@ client.on("interactionCreate", async interaction => {
                 interaction.options.getString("performance_type");
 
             const personInput =
-                interaction.options.getString("person");
+                interaction.options.getString("person") || "";
 
             const note =
                 interaction.options.getString("note") || "";
 
-            // 日付・時間を確認
+            // 日付を確認
             const parsedDate = parseDateInput(dateInput);
-            const parsedTime = parseTimeInput(timeInput);
 
             if (!parsedDate) {
-                await interaction.reply("日付の形式が正しくないよ。MMDD または YYYYMMDD で指定してね。");
+                await interaction.reply(
+                    "日付は「0925」または「20260925」の形式で入力してね。"
+                );
                 return;
             }
 
+            // 時間を確認
+            const parsedTime = parseTimeInput(timeInput);
+
             if (!parsedTime) {
-                await interaction.reply("時間の形式が正しくないよ。");
+                await interaction.reply(
+                    "時間は「14」「1430」「朝」「昼」「夕方」「夜」「一日中」の形式で入力してね。"
+                );
+                return;
+            }
+
+            // 公演種別を確認
+            if (!["normal", "sale"].includes(performanceType)) {
+                await interaction.reply(
+                    "公演の種類を選び直してね。"
+                );
                 return;
             }
 
             // 登録済み作品を取得
             const works = await supabaseRequest(
-                "performance_works?select=id,name"
+                "performance_works?select=id,name&order=id.asc"
             );
 
             const selectedWork = works.find(
@@ -927,6 +963,13 @@ client.on("interactionCreate", async interaction => {
                 .split(/\s+/)
                 .filter(Boolean);
 
+            if (personNames.length === 0) {
+                await interaction.reply(
+                    "参加者を1人以上入力してね。"
+                );
+                return;
+            }
+
             // 公演予定を作成
             const schedule = {
                 id: createNewId(),
@@ -935,57 +978,42 @@ client.on("interactionCreate", async interaction => {
                 timeType: parsedTime.timeType,
                 title: selectedWork.name,
                 person: personNames,
-                note: note,
+                note,
+                announcement: true,
+                announcementMinutes: 30,
                 event_type: "performance",
                 performance_type: performanceType,
                 work_id: Number(selectedWork.id),
                 work_title: selectedWork.name
             };
 
-            // サーバーへ保存
-            await insertSchedules([schedule]);
+            // Supabaseに保存
+            const rows = await insertSchedules([schedule]);
+            const saved = rows && rows[0];
 
-            // Bot側の予定データも更新
-            replaceScheduleInMemory(schedule);
-
-            await interaction.reply(
-                `公演予定を登録したよ！\n` +
-                `作品：${selectedWork.name}\n` +
-                `日付：${parsedDate}\n` +
-                `時間：${parsedTime.time}\n` +
-                `種類：${performanceType === "sale" ? "セール公演" : "通常公演"}\n` +
-                `参加者：${personNames.join("、") || "未指定"}`
-            );
-
-        } catch (error) {
-            console.error("公演予定の登録に失敗しました:", error);
-
-            await interaction.reply(
-                "公演予定の登録に失敗したよ。エラーログを確認してね。"
-            ).catch(() => {});
-        }
-
-        return;
-    }
-
-
-    try {
-        // コマンドへの返信を非公開にする
-        const originalReply = interaction.reply.bind(interaction);
-
-        interaction.reply = options => {
-            if (typeof options === "string") {
-                return originalReply({
-                    content: options,
-                    ephemeral: true
-                });
+            if (!saved) {
+                throw new Error(
+                    "Supabaseから公演予定の保存結果が返されませんでした。"
+                );
             }
 
-            return originalReply({
-                ...options,
-                ephemeral: true
-            });
-        };
+            // Bot側の予定データも更新
+            replaceScheduleInMemory(saved);
+
+            // 登録結果を返信
+            await interaction.reply(
+                `公演予定を登録したよ！\n\n` +
+                `🎭 作品：${selectedWork.name}\n` +
+                `📅 日付：${parsedDate}\n` +
+                `⏰ 時間：${getDisplayTime(saved.time, saved.timeType)}\n` +
+                `🏷️ 種類：${performanceType === "sale" ? "セール公演" : "通常公演"}\n` +
+                `👤 参加者：${personNames.join("、")}\n` +
+                `📌 備考：${note || "なし"}`
+            );
+
+            return;
+        }
+
 
         // -------------------------
         // 予定追加
