@@ -108,6 +108,7 @@
     ⚙️ 定期不可予定を管理
 </button>
 
+
 <div id="recurringUnavailabilityModal" class="modal hidden">
     <div class="modal-content">
         <button
@@ -121,32 +122,49 @@
         <label for="recurringPerson">人</label>
         <select id="recurringPerson"></select>
 
-        <label for="recurringWeekday">曜日</label>
-        <select id="recurringWeekday">
-            <option value="0">日曜日</option>
-            <option value="1">月曜日</option>
-            <option value="2">火曜日</option>
-            <option value="3">水曜日</option>
-            <option value="4">木曜日</option>
-            <option value="5">金曜日</option>
-            <option value="6">土曜日</option>
-        </select>
+        <h3>定期不可予定を登録</h3>
+        <p>曜日と時間帯を複数選択して、まとめて登録できます。</p>
 
-        <label for="recurringTimePeriod">時間帯</label>
-        <select id="recurringTimePeriod">
-            <option value="daytime">昼（昼×）</option>
-            <option value="evening">夜（夜×）</option>
-        </select>
+        <label>曜日（複数選択可）</label>
+        <div id="recurringWeekdayOptions">
+            <label><input type="checkbox" name="recurringWeekday" value="0"> 日曜日</label>
+            <label><input type="checkbox" name="recurringWeekday" value="1"> 月曜日</label>
+            <label><input type="checkbox" name="recurringWeekday" value="2"> 火曜日</label>
+            <label><input type="checkbox" name="recurringWeekday" value="3"> 水曜日</label>
+            <label><input type="checkbox" name="recurringWeekday" value="4"> 木曜日</label>
+            <label><input type="checkbox" name="recurringWeekday" value="5"> 金曜日</label>
+            <label><input type="checkbox" name="recurringWeekday" value="6"> 土曜日</label>
+        </div>
+
+        <label>時間帯（複数選択可）</label>
+        <div id="recurringTimePeriodOptions">
+            <label><input type="checkbox" name="recurringTimePeriod" value="daytime"> 昼（昼×）</label>
+            <label><input type="checkbox" name="recurringTimePeriod" value="evening"> 夜（夜×）</label>
+        </div>
 
         <button
             type="button"
             id="saveRecurringUnavailabilityButton"
-        >定期不可予定を登録</button>
+        >選択した曜日・時間帯をまとめて登録</button>
 
         <h3>登録済みの定期不可予定</h3>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+            <button type="button" id="selectAllRecurringUnavailabilityButton">
+                すべて選択
+            </button>
+            <button type="button" id="clearRecurringUnavailabilitySelectionButton">
+                選択解除
+            </button>
+            <button type="button" id="deleteSelectedRecurringUnavailabilityButton">
+                選択したルールを一括削除
+            </button>
+        </div>
+
         <div id="recurringUnavailabilityList"></div>
     </div>
 </div>
+
 
         </div>
 
