@@ -2590,6 +2590,7 @@ function clearRecurringSelections() {
 }
 
 
+
 /* =========================
    登録済み一覧を表示
 ========================= */
@@ -2614,71 +2615,104 @@ function renderRecurringUnavailabilityList() {
         "土曜日"
     ];
 
+    // 人ごとに定期不可予定をまとめる
+    const rulesByPerson = new Map();
+
     recurringUnavailability.forEach(rule => {
-        const item = document.createElement("div");
+        if (!rulesByPerson.has(rule.person_name)) {
+            rulesByPerson.set(rule.person_name, []);
+        }
 
-        item.style.display = "flex";
-        item.style.alignItems = "center";
-        item.style.justifyContent = "space-between";
-        item.style.gap = "10px";
-        item.style.margin = "8px 0";
-        item.style.padding = "8px";
-        item.style.borderBottom = "1px solid #ddd";
-
-        const description = document.createElement("span");
-
-        const weekdayIndex = Number(rule.weekday);
-        const weekdayName =
-            weekdayNames[weekdayIndex] || "曜日不明";
-
-        const timeName =
-            rule.time_period === "daytime" ? "昼×" :
-            rule.time_period === "evening" ? "夜×" :
-            rule.time_period === "night" ? "夜×" :
-            "時間帯不明";
-
-        description.textContent =
-            `${rule.person_name} / ${weekdayName} / ${timeName}`;
-
-        const deleteButton = document.createElement("button");
-        deleteButton.type = "button";
-        deleteButton.textContent = "削除";
-
-        deleteButton.addEventListener("click", async () => {
-            if (!confirm(`${description.textContent} を削除しますか？`)) {
-                return;
-            }
-
-            deleteButton.disabled = true;
-
-            try {
-                const response = await fetch(
-                    `${API_BASE_URL}/recurring-unavailability/${rule.id}`,
-                    { method: "DELETE" }
-                );
-
-                if (!response.ok) {
-                    throw new Error(`削除失敗: ${response.status}`);
-                }
-
-                await loadRecurringUnavailability();
-                renderRecurringUnavailabilityList();
-                await renderAvailability();
-
-            } catch (error) {
-                console.error(error);
-                alert("削除できませんでした。もう一度試してください。");
-
-            } finally {
-                deleteButton.disabled = false;
-            }
-        });
-
-        item.appendChild(description);
-        item.appendChild(deleteButton);
-
-        recurringUnavailabilityList.appendChild(item);
+        rulesByPerson.get(rule.person_name).push(rule);
     });
+
+    // 人の名前だけを一覧表示し、押すと展開できるようにする
+    [...rulesByPerson.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0], "ja"))
+        .forEach(([personName, rules]) => {
+            const details = document.createElement("details");
+            details.style.margin = "8px 0";
+            details.style.border = "1px solid #ddd";
+            details.style.borderRadius = "8px";
+            details.style.padding = "10px";
+
+            const summary = document.createElement("summary");
+            summary.textContent = personName;
+            summary.style.cursor = "pointer";
+            summary.style.fontWeight = "bold";
+
+            details.appendChild(summary);
+
+            // この人の予定を表示
+            rules.forEach(rule => {
+                const item = document.createElement("div");
+
+                item.style.display = "flex";
+                item.style.alignItems = "center";
+                item.style.justifyContent = "space-between";
+                item.style.gap = "10px";
+                item.style.margin = "8px 0";
+                item.style.padding = "8px";
+                item.style.borderBottom = "1px solid #eee";
+
+                const description = document.createElement("span");
+
+                const weekdayIndex = Number(rule.weekday);
+                const weekdayName =
+                    weekdayNames[weekdayIndex] || "曜日不明";
+
+                const timeName =
+                    rule.time_period === "daytime" ? "昼×" :
+                    rule.time_period === "evening" ? "夜×" :
+                    rule.time_period === "night" ? "夜×" :
+                    "時間帯不明";
+
+                description.textContent =
+                    `${weekdayName} / ${timeName}`;
+
+                const deleteButton = document.createElement("button");
+                deleteButton.type = "button";
+                deleteButton.textContent = "削除";
+
+                deleteButton.addEventListener("click", async () => {
+                    if (!confirm(
+                        `${personName} / ${description.textContent} を削除しますか？`
+                    )) {
+                        return;
+                    }
+
+                    deleteButton.disabled = true;
+
+                    try {
+                        const response = await fetch(
+                            `${API_BASE_URL}/recurring-unavailability/${rule.id}`,
+                            { method: "DELETE" }
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(`削除失敗: ${response.status}`);
+                        }
+
+                        await loadRecurringUnavailability();
+                        renderRecurringUnavailabilityList();
+                        await renderAvailability();
+
+                    } catch (error) {
+                        console.error(error);
+                        alert("削除できませんでした。もう一度試してください。");
+
+                    } finally {
+                        deleteButton.disabled = false;
+                    }
+                });
+
+                item.appendChild(description);
+                item.appendChild(deleteButton);
+                details.appendChild(item);
+            });
+
+            recurringUnavailabilityList.appendChild(details);
+        });
 }
 
 
