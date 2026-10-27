@@ -364,7 +364,8 @@ app.get("/schedules", (req, res) => {
     res.json(schedules);
 });
 
-// =========================
+
+ // =========================
 // メンバー一覧（全端末で共有）
 // =========================
 
@@ -426,6 +427,155 @@ app.put("/members", async (req, res) => {
         console.error("メンバー一覧の保存に失敗:", error);
         res.status(500).json({
             error: "メンバー一覧の保存に失敗しました"
+        });
+    }
+});
+
+
+// =========================
+// 定期的な不可予定一覧
+// =========================
+
+app.get("/recurring-unavailability", async (req, res) => {
+    try {
+        const rules = await supabaseRequest(
+            "recurring_unavailability?select=id,person_name,weekday,time_period,created_at&order=weekday.asc,person_name.asc"
+        );
+
+        res.json(rules);
+    } catch (error) {
+        logError("定期不可予定の取得", error);
+
+        res.status(500).json({
+            error: "定期不可予定の取得に失敗しました"
+        });
+    }
+});
+
+
+// =========================
+// 定期的な不可予定を登録
+// =========================
+
+app.post("/recurring-unavailability", async (req, res) => {
+    try {
+        const personName = String(
+            req.body?.person_name || ""
+        ).trim();
+
+        const weekday = req.body?.weekday;
+        const timePeriod = req.body?.time_period;
+
+        if (!personName) {
+            return res.status(400).json({
+                error: "メンバー名を入力してください"
+            });
+        }
+
+        if (
+            !Number.isInteger(weekday) ||
+            weekday < 0 ||
+            weekday > 6
+        ) {
+            return res.status(400).json({
+                error: "曜日の指定が正しくありません"
+            });
+        }
+
+        if (
+            !["daytime", "evening", "night"].includes(timePeriod)
+        ) {
+            return res.status(400).json({
+                error: "時間帯の指定が正しくありません"
+            });
+        }
+
+        // 同じ条件の重複登録を防ぐ
+        const existing = await supabaseRequest(
+            "recurring_unavailability" +
+            `?person_name=eq.${encodeURIComponent(personName)}` +
+            `&weekday=eq.${weekday}` +
+            `&time_period=eq.${timePeriod}` +
+            "&select=id"
+        );
+
+        if (existing && existing.length > 0) {
+            return res.status(409).json({
+                error: "同じ定期不可予定がすでに登録されています"
+            });
+        }
+
+        const rows = await supabaseRequest(
+            "recurring_unavailability?select=id,person_name,weekday,time_period,created_at",
+            {
+                method: "POST",
+                headers: {
+                    Prefer: "return=representation"
+                },
+                body: JSON.stringify({
+                    person_name: personName,
+                    weekday,
+                    time_period: timePeriod
+                })
+            }
+        );
+
+        if (!rows || rows.length === 0) {
+            throw new Error(
+                "Supabaseから登録結果が返されませんでした"
+            );
+        }
+
+        res.status(201).json(rows[0]);
+    } catch (error) {
+        logError("定期不可予定の登録", error);
+
+        res.status(500).json({
+            error: "定期不可予定の登録に失敗しました"
+        });
+    }
+});
+
+
+// =========================
+// 定期的な不可予定を削除
+// =========================
+
+app.delete("/recurring-unavailability/:id", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!Number.isSafeInteger(id) || id <= 0) {
+            return res.status(400).json({
+                error: "定期不可予定のIDが正しくありません"
+            });
+        }
+
+        const rows = await supabaseRequest(
+            `recurring_unavailability?id=eq.${id}&select=id,person_name,weekday,time_period`,
+            {
+                method: "DELETE",
+                headers: {
+                    Prefer: "return=representation"
+                }
+            }
+        );
+
+        if (!rows || rows.length === 0) {
+            return res.status(404).json({
+                error: "定期不可予定が見つかりません"
+            });
+        }
+
+        res.json({
+            message: "定期不可予定を削除しました",
+            rule: rows[0]
+        });
+    } catch (error) {
+        logError("定期不可予定の削除", error);
+
+        res.status(500).json({
+            error: "定期不可予定の削除に失敗しました"
         });
     }
 });
