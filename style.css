@@ -584,14 +584,16 @@ main {
 }
 
 
+
 /* =========================
-   空き状況：固定表示の準備
+   空き状況：広い表示＋縦横スクロール
 ========================= */
 
-/* 表を横スクロールできるようにする */
+/* 表の表示領域を広く確保 */
 #availabilityTable {
     width: 100%;
-    max-height: 70vh;
+    height: 80vh;
+    max-height: 80vh;
     overflow: auto;
     position: relative;
     -webkit-overflow-scrolling: touch;
@@ -603,7 +605,7 @@ main {
     min-width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    margin-top: 10px;
+    margin-top: 0;
 }
 
 /* セルの基本設定 */
@@ -611,33 +613,34 @@ main {
 #availabilityTable .availability-table td {
     border-right: 1px solid #ccc;
     border-bottom: 1px solid #ccc;
-    padding: 8px 12px;
+    padding: 6px 10px;
     text-align: center;
-    min-width: 80px;
+    min-width: 70px;
     background: #fff;
+    white-space: nowrap;
 }
 
-/* 表の上端：メンバー名 */
+/* メンバー名の見出し */
 #availabilityTable .availability-table th {
     background-color: #f0f0f0;
     font-weight: bold;
 }
 
-/* 左端：日付 */
+/* 左端の日付 */
 #availabilityTable .availability-table td:first-child,
 #availabilityTable .availability-table th:first-child {
     min-width: 60px;
     white-space: nowrap;
 }
 
-/* 固定ONのときだけ、見出しと日付を固定 */
+/* 見出し行を上端に固定 */
 #availabilityTable.sticky-enabled .availability-table tr:first-child th {
     position: sticky;
     top: 0;
     z-index: 3;
 }
 
-/* 左端の日付を固定 */
+/* 日付列を左端に固定 */
 #availabilityTable.sticky-enabled .availability-table th:first-child,
 #availabilityTable.sticky-enabled .availability-table td:first-child {
     position: sticky;
@@ -645,18 +648,32 @@ main {
     z-index: 2;
 }
 
-/* 左上の「日付」セルは最前面 */
+/* 左上の日付セルを最前面に */
 #availabilityTable.sticky-enabled .availability-table tr:first-child th:first-child {
     z-index: 4;
 }
 
-/* 固定セルの背景が透けないようにする */
+/* 固定セルの背景 */
 #availabilityTable.sticky-enabled .availability-table td:first-child {
     background-color: #fff;
 }
 
 #availabilityTable.sticky-enabled .availability-table tr:first-child th {
     background-color: #f0f0f0;
+}
+
+/* スマホでは画面に合わせて高さを調整 */
+@media (max-width: 600px) {
+    #availabilityTable {
+        height: 75vh;
+        max-height: 75vh;
+    }
+
+    #availabilityTable .availability-table th,
+    #availabilityTable .availability-table td {
+        padding: 6px 8px;
+        min-width: 65px;
+    }
 }
 
 
