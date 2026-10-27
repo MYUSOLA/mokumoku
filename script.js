@@ -2482,11 +2482,47 @@ function renderAvailabilityPeopleFilter() {
 }
 
 
+
+/* =========================
+   定期不可予定を取得
+========================= */
+
+let recurringUnavailability = [];
+
+async function loadRecurringUnavailability() {
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/recurring-unavailability`
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `取得失敗: ${response.status}`
+            );
+        }
+
+        recurringUnavailability =
+            await response.json();
+
+    } catch (error) {
+        console.error(
+            "定期不可予定の取得に失敗しました",
+            error
+        );
+
+        recurringUnavailability = [];
+    }
+}
+
+
 // =========================
 // 空き状況を表示
 // =========================
 
-function renderAvailability() {
+async function renderAvailability() {
+
+    // 定期不可予定を読み込む
+    await loadRecurringUnavailability();
 
     currentMonth.textContent =
         `${year}年${month + 1}月`;
@@ -2495,76 +2531,46 @@ function renderAvailability() {
 
     availabilityTable.innerHTML = "";
 
-
     const checkedPeopleIds =
         Array.from(
             availabilityPeopleFilter.querySelectorAll(
                 'input[type="checkbox"]:checked'
             )
         ).map(
-            checkbox =>
-                checkbox.value
+            checkbox => checkbox.value
         );
-
 
     const table =
         document.createElement("table");
 
-    table.className =
-        "availability-table";
-
+    table.className = "availability-table";
 
     const headerRow =
         document.createElement("tr");
 
-
     const dateHeader =
         document.createElement("th");
 
-    dateHeader.textContent =
-        "日付";
+    dateHeader.textContent = "日付";
 
-    headerRow.appendChild(
-        dateHeader
-    );
+    headerRow.appendChild(dateHeader);
 
+    people.forEach(person => {
 
-    people.forEach(
-        person => {
-
-            if (
-                !checkedPeopleIds.includes(
-                    person.id
-                )
-            ) {
-                return;
-            }
-
-            const th =
-                document.createElement("th");
-
-            th.textContent =
-                person.name;
-
-            headerRow.appendChild(
-                th
-            );
+        if (!checkedPeopleIds.includes(person.id)) {
+            return;
         }
-    );
 
+        const th = document.createElement("th");
+        th.textContent = person.name;
 
-    table.appendChild(
-        headerRow
-    );
+        headerRow.appendChild(th);
+    });
 
+    table.appendChild(headerRow);
 
     const daysInMonth =
-        new Date(
-            year,
-            month + 1,
-            0
-        ).getDate();
-
+        new Date(year, month + 1, 0).getDate();
 
     for (
         let day = 1;
@@ -2575,103 +2581,85 @@ function renderAvailability() {
         const date =
             `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
+        const weekday =
+            new Date(year, month, day).getDay();
 
-        const row =
-            document.createElement("tr");
+        const row = document.createElement("tr");
 
+        const dateCell = document.createElement("td");
+        dateCell.textContent = `${month + 1}/${day}`;
 
-        const dateCell =
-            document.createElement("td");
+        row.appendChild(dateCell);
 
-        dateCell.textContent =
-            `${month + 1}/${day}`;
+        people.forEach(person => {
 
-        row.appendChild(
-            dateCell
-        );
+            if (!checkedPeopleIds.includes(person.id)) {
+                return;
+            }
 
+            const cell = document.createElement("td");
+            const unavailableTimes = [];
 
-        people.forEach(
-            person => {
+            // 通常の予定から不可時間を取得
+            events.forEach(event => {
 
-                if (
-                    !checkedPeopleIds.includes(
-                        person.id
-                    )
-                ) {
+                if (event.date !== date) {
                     return;
                 }
 
+                if (!event.people.includes(person.id)) {
+                    return;
+                }
 
-                const cell =
-                    document.createElement("td");
+                const times =
+                    getAvailabilityTimeType(event);
 
-                const unavailableTimes =
-                    [];
+                times.forEach(time => {
 
-
-                events.forEach(
-                    event => {
-
-                        if (
-                            event.date !== date
-                        ) {
-                            return;
-                        }
-
-                        if (
-                            !event.people.includes(
-                                person.id
-                            )
-                        ) {
-                            return;
-                        }
-
-
-                        const times =
-                            getAvailabilityTimeType(
-                                event
-                            );
-
-
-                        times.forEach(
-                            time => {
-
-                                if (
-                                    !unavailableTimes.includes(
-                                        time
-                                    )
-                                ) {
-
-                                    unavailableTimes.push(
-                                        time
-                                    );
-                                }
-                            }
-                        );
+                    if (!unavailableTimes.includes(time)) {
+                        unavailableTimes.push(time);
                     }
-                );
+                });
+            });
 
+            // 定期不可予定から不可時間を取得
+            recurringUnavailability.forEach(rule => {
 
-                cell.textContent =
-                    unavailableTimes.join(" ");
+                if (rule.person_name !== person.name) {
+                    return;
+                }
 
-                row.appendChild(
-                    cell
-                );
-            }
-        );
+                if (Number(rule.weekday) !== weekday) {
+                    return;
+                }
 
+                let timeLabel = "";
 
-        table.appendChild(
-            row
-        );
+                if (rule.time_period === "daytime") {
+                    timeLabel = "昼×";
+                } else if (rule.time_period === "evening") {
+                    timeLabel = "夜×";
+                } else if (rule.time_period === "night") {
+                    timeLabel = "夜×";
+                }
+
+                if (
+                    timeLabel &&
+                    !unavailableTimes.includes(timeLabel)
+                ) {
+                    unavailableTimes.push(timeLabel);
+                }
+            });
+
+            cell.textContent = unavailableTimes.join(" ");
+
+            row.appendChild(cell);
+        });
+
+        table.appendChild(row);
     }
 
-
-        availabilityTable.appendChild(
-        table
-    );
+    availabilityTable.appendChild(table);
 
     availabilityTable.classList.toggle(
         "sticky-enabled",
