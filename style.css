@@ -592,8 +592,8 @@ main {
 /* 表の表示領域を広く確保 */
 #availabilityTable {
     width: 100%;
-    height: 80vh;
-    max-height: 80vh;
+    height: 90vh;
+    max-height: 90vh;
     overflow: auto;
     position: relative;
     -webkit-overflow-scrolling: touch;
@@ -665,8 +665,8 @@ main {
 /* スマホでは画面に合わせて高さを調整 */
 @media (max-width: 600px) {
     #availabilityTable {
-        height: 75vh;
-        max-height: 75vh;
+        height: 85vh;
+        max-height: 85vh;
     }
 
     #availabilityTable .availability-table th,
