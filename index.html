@@ -103,6 +103,51 @@
 </div>
 
 <div id="availabilityTable"></div>
+            
+<button type="button" id="manageRecurringUnavailabilityButton">
+    ⚙️ 定期不可予定を管理
+</button>
+
+<div id="recurringUnavailabilityModal" class="modal hidden">
+    <div class="modal-content">
+        <button
+            type="button"
+            id="closeRecurringUnavailabilityModal"
+            class="close-button"
+        >×</button>
+
+        <h2>定期不可予定の管理</h2>
+
+        <label for="recurringPerson">人</label>
+        <select id="recurringPerson"></select>
+
+        <label for="recurringWeekday">曜日</label>
+        <select id="recurringWeekday">
+            <option value="0">日曜日</option>
+            <option value="1">月曜日</option>
+            <option value="2">火曜日</option>
+            <option value="3">水曜日</option>
+            <option value="4">木曜日</option>
+            <option value="5">金曜日</option>
+            <option value="6">土曜日</option>
+        </select>
+
+        <label for="recurringTimePeriod">時間帯</label>
+        <select id="recurringTimePeriod">
+            <option value="daytime">昼（昼×）</option>
+            <option value="evening">夜（夜×）</option>
+        </select>
+
+        <button
+            type="button"
+            id="saveRecurringUnavailabilityButton"
+        >定期不可予定を登録</button>
+
+        <h3>登録済みの定期不可予定</h3>
+        <div id="recurringUnavailabilityList"></div>
+    </div>
+</div>
+
         </div>
 
         <!-- 予定詳細 -->
