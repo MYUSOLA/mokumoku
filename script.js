@@ -2651,7 +2651,13 @@ async function renderAvailability() {
                 }
             });
 
-            cell.textContent = unavailableTimes.join(" ");
+            const timeOrder = ["昼×", "夜×"];
+
+unavailableTimes.sort(
+    (a, b) => timeOrder.indexOf(a) - timeOrder.indexOf(b)
+);
+
+cell.textContent = unavailableTimes.join(" ");
 
             row.appendChild(cell);
         });
