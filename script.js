@@ -2483,11 +2483,37 @@ function renderAvailabilityPeopleFilter() {
 
 
 
+
 /* =========================
-   定期不可予定を取得
+   定期不可予定の取得・管理
 ========================= */
 
 let recurringUnavailability = [];
+
+const manageRecurringUnavailabilityButton =
+    document.getElementById("manageRecurringUnavailabilityButton");
+
+const recurringUnavailabilityModal =
+    document.getElementById("recurringUnavailabilityModal");
+
+const closeRecurringUnavailabilityModal =
+    document.getElementById("closeRecurringUnavailabilityModal");
+
+const recurringPerson =
+    document.getElementById("recurringPerson");
+
+const recurringWeekday =
+    document.getElementById("recurringWeekday");
+
+const recurringTimePeriod =
+    document.getElementById("recurringTimePeriod");
+
+const saveRecurringUnavailabilityButton =
+    document.getElementById("saveRecurringUnavailabilityButton");
+
+const recurringUnavailabilityList =
+    document.getElementById("recurringUnavailabilityList");
+
 
 async function loadRecurringUnavailability() {
     try {
@@ -2496,13 +2522,10 @@ async function loadRecurringUnavailability() {
         );
 
         if (!response.ok) {
-            throw new Error(
-                `取得失敗: ${response.status}`
-            );
+            throw new Error(`取得失敗: ${response.status}`);
         }
 
-        recurringUnavailability =
-            await response.json();
+        recurringUnavailability = await response.json();
 
     } catch (error) {
         console.error(
@@ -2512,6 +2535,202 @@ async function loadRecurringUnavailability() {
 
         recurringUnavailability = [];
     }
+}
+
+
+/* =========================
+   登録する人の選択肢
+========================= */
+
+function updateRecurringPersonOptions() {
+    const previousValue = recurringPerson.value;
+
+    recurringPerson.replaceChildren();
+
+    people.forEach(person => {
+        const option = document.createElement("option");
+        option.value = person.name;
+        option.textContent = person.name;
+
+        recurringPerson.appendChild(option);
+    });
+
+    if (people.some(person => person.name === previousValue)) {
+        recurringPerson.value = previousValue;
+    }
+}
+
+
+/* =========================
+   登録済み一覧を表示
+========================= */
+
+function renderRecurringUnavailabilityList() {
+    recurringUnavailabilityList.replaceChildren();
+
+    if (recurringUnavailability.length === 0) {
+        const message = document.createElement("p");
+        message.textContent = "登録済みの定期不可予定はありません。";
+        recurringUnavailabilityList.appendChild(message);
+        return;
+    }
+
+    const weekdayNames = [
+        "日曜日",
+        "月曜日",
+        "火曜日",
+        "水曜日",
+        "木曜日",
+        "金曜日",
+        "土曜日"
+    ];
+
+    recurringUnavailability.forEach(rule => {
+        const item = document.createElement("div");
+        item.style.display = "flex";
+        item.style.alignItems = "center";
+        item.style.justifyContent = "space-between";
+        item.style.gap = "10px";
+        item.style.margin = "8px 0";
+        item.style.padding = "8px";
+        item.style.borderBottom = "1px solid #ddd";
+
+        const description = document.createElement("span");
+
+        const timeName =
+            rule.time_period === "daytime" ? "昼×" : "夜×";
+
+        description.textContent =
+            `${rule.person_name} / ` +
+            `${weekdayNames[Number(rule.weekday)]} / ${timeName}`;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.textContent = "削除";
+
+        deleteButton.addEventListener("click", async () => {
+            if (!confirm(
+                `${description.textContent} を削除しますか？`
+            )) {
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/recurring-unavailability/${rule.id}`,
+                    {
+                        method: "DELETE"
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`削除失敗: ${response.status}`);
+                }
+
+                await loadRecurringUnavailability();
+                renderRecurringUnavailabilityList();
+                await renderAvailability();
+
+            } catch (error) {
+                console.error(error);
+                alert("削除できませんでした。もう一度試してください。");
+            }
+        });
+
+        item.appendChild(description);
+        item.appendChild(deleteButton);
+        recurringUnavailabilityList.appendChild(item);
+    });
+}
+
+
+/* =========================
+   管理画面を開く・閉じる
+========================= */
+
+if (manageRecurringUnavailabilityButton) {
+    manageRecurringUnavailabilityButton.addEventListener(
+        "click",
+        async () => {
+            updateRecurringPersonOptions();
+            await loadRecurringUnavailability();
+            renderRecurringUnavailabilityList();
+
+            recurringUnavailabilityModal.classList.remove("hidden");
+        }
+    );
+}
+
+if (closeRecurringUnavailabilityModal) {
+    closeRecurringUnavailabilityModal.addEventListener(
+        "click",
+        () => {
+            recurringUnavailabilityModal.classList.add("hidden");
+        }
+    );
+}
+
+
+/* =========================
+   定期不可予定を登録
+========================= */
+
+if (saveRecurringUnavailabilityButton) {
+    saveRecurringUnavailabilityButton.addEventListener(
+        "click",
+        async () => {
+            const personName = recurringPerson.value;
+            const weekday = Number(recurringWeekday.value);
+            const timePeriod = recurringTimePeriod.value;
+
+            if (!personName) {
+                alert("登録する人を選択してください。");
+                return;
+            }
+
+            const duplicate = recurringUnavailability.some(rule =>
+                rule.person_name === personName &&
+                Number(rule.weekday) === weekday &&
+                rule.time_period === timePeriod
+            );
+
+            if (duplicate) {
+                alert("同じ定期不可予定がすでに登録されています。");
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/recurring-unavailability`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            person_name: personName,
+                            weekday: weekday,
+                            time_period: timePeriod
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`登録失敗: ${response.status}`);
+                }
+
+                await loadRecurringUnavailability();
+                renderRecurringUnavailabilityList();
+                await renderAvailability();
+
+                alert("定期不可予定を登録しました。");
+
+            } catch (error) {
+                console.error(error);
+                alert("登録できませんでした。もう一度試してください。");
+            }
+        }
+    );
 }
 
 
