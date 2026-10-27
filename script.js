@@ -2591,9 +2591,17 @@ function clearRecurringSelections() {
 
 
 
+
 /* =========================
    登録済み一覧を表示
 ========================= */
+
+// 開いている人の名前を記録
+let openRecurringPersonNames = new Set();
+
+// 選択中の定期不可予定のIDを記録
+let selectedRecurringUnavailabilityIds = new Set();
+
 
 function renderRecurringUnavailabilityList() {
     recurringUnavailabilityList.replaceChildren();
@@ -2602,6 +2610,7 @@ function renderRecurringUnavailabilityList() {
         const message = document.createElement("p");
         message.textContent = "登録済みの定期不可予定はありません。";
         recurringUnavailabilityList.appendChild(message);
+        selectedRecurringUnavailabilityIds.clear();
         return;
     }
 
@@ -2615,7 +2624,18 @@ function renderRecurringUnavailabilityList() {
         "土曜日"
     ];
 
-    // 人ごとに定期不可予定をまとめる
+    // 削除済みのIDは選択状態から除外
+    const existingIds = new Set(
+        recurringUnavailability.map(rule => String(rule.id))
+    );
+
+    selectedRecurringUnavailabilityIds = new Set(
+        [...selectedRecurringUnavailabilityIds].filter(
+            id => existingIds.has(id)
+        )
+    );
+
+    // 人ごとにまとめる
     const rulesByPerson = new Map();
 
     recurringUnavailability.forEach(rule => {
@@ -2626,37 +2646,95 @@ function renderRecurringUnavailabilityList() {
         rulesByPerson.get(rule.person_name).push(rule);
     });
 
-    // 人の名前だけを一覧表示し、押すと展開できるようにする
     [...rulesByPerson.entries()]
         .sort((a, b) => a[0].localeCompare(b[0], "ja"))
         .forEach(([personName, rules]) => {
             const details = document.createElement("details");
+
             details.style.margin = "8px 0";
             details.style.border = "1px solid #ddd";
             details.style.borderRadius = "8px";
             details.style.padding = "10px";
+
+            // 前回開いていた人は開いたままにする
             details.open = openRecurringPersonNames.has(personName);
 
+            details.addEventListener("toggle", () => {
+                if (details.open) {
+                    openRecurringPersonNames.add(personName);
+                } else {
+                    openRecurringPersonNames.delete(personName);
+                }
+            });
+
             const summary = document.createElement("summary");
-            summary.textContent = personName;
             summary.style.cursor = "pointer";
             summary.style.fontWeight = "bold";
 
+            // 名前の横に選択チェックを付ける
+            const personCheckbox = document.createElement("input");
+            personCheckbox.type = "checkbox";
+            personCheckbox.checked = rules.every(
+                rule => selectedRecurringUnavailabilityIds.has(
+                    String(rule.id)
+                )
+            );
+            personCheckbox.style.marginRight = "8px";
+
+            personCheckbox.addEventListener("click", event => {
+                event.stopPropagation();
+            });
+
+            personCheckbox.addEventListener("change", () => {
+                rules.forEach(rule => {
+                    const id = String(rule.id);
+
+                    if (personCheckbox.checked) {
+                        selectedRecurringUnavailabilityIds.add(id);
+                    } else {
+                        selectedRecurringUnavailabilityIds.delete(id);
+                    }
+                });
+
+                renderRecurringUnavailabilityList();
+            });
+
+            summary.appendChild(personCheckbox);
+            summary.appendChild(document.createTextNode(personName));
             details.appendChild(summary);
 
-            // この人の予定を表示
             rules.forEach(rule => {
                 const item = document.createElement("div");
 
                 item.style.display = "flex";
                 item.style.alignItems = "center";
-                item.style.justifyContent = "space-between";
-                item.style.gap = "10px";
+                item.style.gap = "8px";
                 item.style.margin = "8px 0";
                 item.style.padding = "8px";
                 item.style.borderBottom = "1px solid #eee";
 
+                // 個別ルールの選択チェック
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.checked =
+                    selectedRecurringUnavailabilityIds.has(
+                        String(rule.id)
+                    );
+
+                checkbox.addEventListener("change", () => {
+                    const id = String(rule.id);
+
+                    if (checkbox.checked) {
+                        selectedRecurringUnavailabilityIds.add(id);
+                    } else {
+                        selectedRecurringUnavailabilityIds.delete(id);
+                    }
+
+                    renderRecurringUnavailabilityList();
+                });
+
                 const description = document.createElement("span");
+                description.style.flex = "1";
 
                 const weekdayIndex = Number(rule.weekday);
                 const weekdayName =
@@ -2694,6 +2772,13 @@ function renderRecurringUnavailabilityList() {
                             throw new Error(`削除失敗: ${response.status}`);
                         }
 
+                        selectedRecurringUnavailabilityIds.delete(
+                            String(rule.id)
+                        );
+
+                        // 開いている人を記録してから一覧を更新
+                        openRecurringPersonNames.add(personName);
+
                         await loadRecurringUnavailability();
                         renderRecurringUnavailabilityList();
                         await renderAvailability();
@@ -2707,13 +2792,127 @@ function renderRecurringUnavailabilityList() {
                     }
                 });
 
+                item.appendChild(checkbox);
                 item.appendChild(description);
                 item.appendChild(deleteButton);
+
                 details.appendChild(item);
             });
 
             recurringUnavailabilityList.appendChild(details);
         });
+}
+
+
+/* =========================
+   一括選択・選択解除
+========================= */
+
+const selectAllRecurringUnavailabilityButton =
+    document.getElementById("selectAllRecurringUnavailabilityButton");
+
+const clearRecurringUnavailabilitySelectionButton =
+    document.getElementById("clearRecurringUnavailabilitySelectionButton");
+
+const deleteSelectedRecurringUnavailabilityButton =
+    document.getElementById("deleteSelectedRecurringUnavailabilityButton");
+
+
+if (selectAllRecurringUnavailabilityButton) {
+    selectAllRecurringUnavailabilityButton.addEventListener(
+        "click",
+        () => {
+            recurringUnavailability.forEach(rule => {
+                selectedRecurringUnavailabilityIds.add(String(rule.id));
+            });
+
+            renderRecurringUnavailabilityList();
+        }
+    );
+}
+
+if (clearRecurringUnavailabilitySelectionButton) {
+    clearRecurringUnavailabilitySelectionButton.addEventListener(
+        "click",
+        () => {
+            selectedRecurringUnavailabilityIds.clear();
+            renderRecurringUnavailabilityList();
+        }
+    );
+}
+
+
+/* =========================
+   選択したルールを一括削除
+========================= */
+
+if (deleteSelectedRecurringUnavailabilityButton) {
+    deleteSelectedRecurringUnavailabilityButton.addEventListener(
+        "click",
+        async () => {
+            const selectedIds = [
+                ...selectedRecurringUnavailabilityIds
+            ];
+
+            if (selectedIds.length === 0) {
+                alert("削除するルールを選択してください。");
+                return;
+            }
+
+            if (!confirm(
+                `選択した${selectedIds.length}件の定期不可予定を削除しますか？`
+            )) {
+                return;
+            }
+
+            deleteSelectedRecurringUnavailabilityButton.disabled = true;
+
+            let successCount = 0;
+            let failedCount = 0;
+
+            try {
+                for (const id of selectedIds) {
+                    try {
+                        const response = await fetch(
+                            `${API_BASE_URL}/recurring-unavailability/${encodeURIComponent(id)}`,
+                            { method: "DELETE" }
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(`削除失敗: ${response.status}`);
+                        }
+
+                        successCount++;
+                        selectedRecurringUnavailabilityIds.delete(id);
+
+                    } catch (error) {
+                        console.error("一括削除中のエラー:", error);
+                        failedCount++;
+                    }
+                }
+
+                await loadRecurringUnavailability();
+                renderRecurringUnavailabilityList();
+                await renderAvailability();
+
+                if (failedCount === 0) {
+                    alert(`${successCount}件の定期不可予定を削除しました。`);
+                } else {
+                    alert(
+                        `${successCount}件を削除しました。\n` +
+                        `${failedCount}件は削除できませんでした。`
+                    );
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("一覧の更新に失敗しました。ページを再読み込みして確認してください。");
+
+            } finally {
+                deleteSelectedRecurringUnavailabilityButton.disabled = false;
+            }
+        }
+    );
 }
 
 
