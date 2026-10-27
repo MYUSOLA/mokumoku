@@ -2635,6 +2635,7 @@ function renderRecurringUnavailabilityList() {
             details.style.border = "1px solid #ddd";
             details.style.borderRadius = "8px";
             details.style.padding = "10px";
+            details.open = openRecurringPersonNames.has(personName);
 
             const summary = document.createElement("summary");
             summary.textContent = personName;
