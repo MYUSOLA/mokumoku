@@ -745,7 +745,7 @@ app.post("/schedules", async (req, res) => {
 
             // 公演情報
             event_type: body.event_type || "normal",
-            performance_type: body.performance_type || "",
+            performance_type: body.performance_type || null,
             work_id: body.work_id ?? null,
             work_title: String(body.work_title || "")
         };
@@ -1641,3 +1641,4 @@ start().catch(error => {
     logError("起動処理", error);
     process.exitCode = 1;
 });
+
